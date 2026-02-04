@@ -26,13 +26,14 @@ package Hlquery::Response
 
      sub new 
      {
-          my ($class, $status_code, $body, $headers) = @_;
+          my ($class, $status_code, $body, $headers, $decoder) = @_;
 
           my $self = bless 
           {
                status_code => $status_code,
                body        => $body,
-               headers     => $headers || {}
+               headers     => $headers || {},
+               decoder     => $decoder
           }, $class;
 
           return $self;
@@ -53,6 +54,12 @@ package Hlquery::Response
      {
           my $self = shift;
 
+          if ($self->{decoder} && defined $self->{body} && !ref($self->{body})) 
+          {
+               $self->{body} = $self->{decoder}->($self->{body});
+               $self->{decoder} = undef;
+          }
+
           return $self->{body};
      }
 
@@ -62,9 +69,11 @@ package Hlquery::Response
      {
           my $self = shift;
           
-          if (ref($self->{body}) eq 'HASH')
+          my $body = $self->GetBody();
+          
+          if (ref($body) eq 'HASH')
           {
-               return $self->{body}->{data};
+               return $body->{data};
           }
           
           return undef;
@@ -114,9 +123,11 @@ package Hlquery::Response
      {
           my $self = shift;
 
-          if ($self->IsError() && ref($self->{body}) eq 'HASH') 
+          my $body = $self->GetBody();
+
+          if ($self->IsError() && ref($body) eq 'HASH') 
           {
-               return $self->{body}->{error} || $self->{body}->{message} || 'Unknown error.';
+               return $body->{error} || $body->{message} || 'Unknown error.';
           }
 
           return undef;
@@ -131,7 +142,7 @@ package Hlquery::Response
           return 
           {
                status => $self->{status_code},
-               body   => $self->{body}
+               body   => $self->GetBody()
           };
      }
 

@@ -43,7 +43,7 @@ if ($collections->IsSuccess())
 
 unless ($collection_name) 
 {
-    print "No collections found. Run collections_examples.pl first.\n";
+    print "No collections found. Run collections.pl first.\n";
     exit 0;
 }
 

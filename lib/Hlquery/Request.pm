@@ -15,8 +15,9 @@ package Hlquery::Request
      use strict;
      use warnings;
      use LWP::UserAgent;
+     use LWP::ConnCache;
      use HTTP::Request;
-     use JSON;
+     use JSON::MaybeXS;
      use URI;
      use URI::Escape;
 
@@ -33,7 +34,7 @@ package Hlquery::Request
 
      sub new
      {
-          my ($class, $base_url, $timeout, $auth_token, $auth_method) = @_;
+          my ($class, $base_url, $timeout, $auth_token, $auth_method, $pool, $lazy) = @_;
 
           $base_url =~ s/\/$//;
           
@@ -47,6 +48,11 @@ package Hlquery::Request
           
           $ua->agent("hlquery-perl-client/$Hlquery::VERSION");
 
+          if ($pool) 
+          {
+               $ua->conn_cache(LWP::ConnCache->new);
+          }
+
           my $self = bless 
           {
                base_url    => $base_url,
@@ -54,7 +60,8 @@ package Hlquery::Request
                auth_token  => $auth_token,
                auth_method => $auth_method,
                ua          => $ua,
-               json        => JSON->new->utf8->allow_nonref
+               json        => JSON::MaybeXS->new->utf8->allow_nonref,
+               lazy        => $lazy
           }, $class;
 
           return $self;
@@ -148,15 +155,23 @@ package Hlquery::Request
           }
 
           my $decoded;
+          my $decoder;
           
           if ($response_body) 
           {
-               eval 
-               {
-                    $decoded = $self->{json}->decode($response_body);
+               $decoder = sub {
+                    my $body = shift;
+                    my $out;
+                    eval { $out = $self->{json}->decode($body); };
+                    return $@ ? $body : $out;
                };
-               
-               if ($@) 
+
+               unless ($self->{lazy}) 
+               {
+                    $decoded = $decoder->($response_body);
+                    $decoder = undef;
+               } 
+               else 
                {
                     $decoded = $response_body;
                }
@@ -164,22 +179,31 @@ package Hlquery::Request
 
           # /* Handle specific error conditions. */
 
-          if ($status_code == 403 && ref($decoded) eq 'HASH') 
+          if ($status_code == 403) 
           {
-               my $error = $decoded->{error} // '';
+               my $check_decoded = $decoded;
                
-               my $message = $decoded->{message} // '';
-
-               if ($error =~ /Authentication is disabled/ || $message =~ /Tokens are not accepted when authentication is disabled/) 
+               if ($decoder) 
                {
-                    die Hlquery::AuthenticationException->new(
-                        "Authentication is disabled on the server. Remove the token from your client configuration. " .
-                        "Server message: " . ($message || $error) . "."
-                    );
+                    $check_decoded = $decoder->($response_body);
+               }
+
+               if (ref($check_decoded) eq 'HASH') 
+               {
+                    my $error = $check_decoded->{error} // '';
+                    my $message = $check_decoded->{message} // '';
+
+                    if ($error =~ /Authentication is disabled/ || $message =~ /Tokens are not accepted when authentication is disabled/) 
+                    {
+                         die Hlquery::AuthenticationException->new(
+                             "Authentication is disabled on the server. Remove the token from your client configuration. " .
+                             "Server message: " . ($message || $error) . "."
+                         );
+                    }
                }
           }
 
-          return Hlquery::Response->new($status_code, $decoded, \%response_headers);
+          return Hlquery::Response->new($status_code, $decoded, \%response_headers, $decoder);
      }
 
      1;

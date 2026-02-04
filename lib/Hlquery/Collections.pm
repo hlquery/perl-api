@@ -130,6 +130,11 @@ package Hlquery::Collections
           
           my $response = $self->Get($name);
           
+          if (ref($response) ne 'Hlquery::Response')
+          {
+               return $response; # Probably a promise
+          }
+
           if ($response->GetStatusCode() != 200) 
           {
                return $response;

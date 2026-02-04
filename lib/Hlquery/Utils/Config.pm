@@ -19,6 +19,8 @@ package Hlquery::Utils::Config
      use constant DEFAULT_TIMEOUT     => 30;
      use constant DEFAULT_BASE_URL    => 'http://localhost:9200';
      use constant DEFAULT_AUTH_METHOD => 'bearer';
+     use constant DEFAULT_POOL        => 1;
+     use constant DEFAULT_LAZY        => 0;
 
      # /*
      #  * Hlquery::Utils::Config - Internal configuration utilities.
@@ -37,7 +39,9 @@ package Hlquery::Utils::Config
                timeout     => DEFAULT_TIMEOUT,
                base_url    => DEFAULT_BASE_URL,
                auth_method => DEFAULT_AUTH_METHOD,
-               token       => undef
+               token       => undef,
+               pool        => DEFAULT_POOL,
+               lazy        => DEFAULT_LAZY
           };
           
           foreach my $key (keys %$user_options) 

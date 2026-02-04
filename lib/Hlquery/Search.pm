@@ -84,7 +84,7 @@ package Hlquery::Search
           {
                my $collection = $self->{collections}->Get($collection_name);
                
-               if ($collection->GetStatusCode() == 200) 
+               if (ref($collection) eq 'Hlquery::Response' && $collection->GetStatusCode() == 200) 
                {
                     my $body = $collection->GetBody();
                     

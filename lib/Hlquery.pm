@@ -15,9 +15,10 @@ package Hlquery
      use strict;
      use warnings;
 
-     our $VERSION = '1.1.0';
+     our $VERSION = '1.2.0';
 
      use Hlquery::Client;
+     use Hlquery::AsyncClient;
      use Hlquery::Exceptions;
 
      # /*

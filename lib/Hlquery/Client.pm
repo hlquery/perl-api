@@ -49,7 +49,9 @@ package Hlquery::Client
                $base_url,
                $options->{timeout},
                $options->{token},
-               $options->{auth_method} || 'bearer'
+               $options->{auth_method} || 'bearer',
+               $options->{pool},
+               $options->{lazy}
           );
 
           my $collections = Hlquery::Collections->new($request);
