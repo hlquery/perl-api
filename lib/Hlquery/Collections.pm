@@ -1,260 +1,112 @@
-# /*
-#  * hlquery - Search beyond keywords.
-#  * http://www.hlquery.com
-#  *
-#  * Copyright (C) 2021-2026, Carlos F. Ferry <carlos.ferry@gmail.com>
-#  *
-#  * This file is part of hlquery, released under the BSD License version 3.
-#  * You are free to redistribute and/or modify this software
-#  * under the terms of the BSD License.
-#  * For more details, please visit: https://docs.hlquery.com
-#  */
+package Hlquery::Collections;
 
-package Hlquery::Collections
+use strict;
+use warnings;
+
+use URI::Escape qw(uri_escape_utf8);
+use Hlquery::Response;
+
+sub new
 {
-     use strict;
-     use warnings;
-     use URI::Escape;
-     use Hlquery::Response;
-     use Hlquery::Utils::Validator;
-
-     # /*
-     #  * Hlquery::Collections - Collection management API.
-     #  *
-     #  * This class provides methods for creating, listing, and deleting collections.
-     #  */
-
-     # /* Constructor for the Collections handler. */
-
-     sub new
-     {
-          my ($class, $request) = @_;
-
-          my $self = bless 
-          {
-               request => $request
-          }, $class;
-
-          return $self;
-     }
-
-     # /* Lists all collections. */
-
-     sub List
-     {
-          my ($self, $offset, $limit) = @_;
-
-          $offset //= 0;
-          
-          $limit //= 10;
-          
-          Hlquery::Utils::Validator::ValidatePagination($offset, $limit);
-          
-          return $self->{request}->Execute('GET', '/collections', undef, 
-          {
-               offset => $offset,
-               limit  => $limit
-          });
-     }
-
-     # /* Returns details for a specific collection. */
-
-     sub Get
-     {
-          my ($self, $name) = @_;
-          
-          Hlquery::Utils::Validator::ValidateCollectionName($name);
-          
-          return $self->{request}->Execute('GET', '/collections/' . uri_escape($name));
-     }
-
-     # /* Creates a new collection. */
-
-     sub Create
-     {
-          my ($self, $name, $schema) = @_;
-          
-          Hlquery::Utils::Validator::ValidateCollectionName($name);
-          
-          my $body = 
-          {
-               name => $name
-          };
-          
-          if ($schema && ref($schema) eq 'HASH') 
-          {
-               if (exists $schema->{fields} && ref($schema->{fields}) eq 'ARRAY') 
-               {
-                    $body->{fields} = $schema->{fields};
-               } 
-               elsif (exists $schema->{searchable_fields} && ref($schema->{searchable_fields}) eq 'ARRAY') 
-               {
-                    $body->{searchable_fields} = $schema->{searchable_fields};
-               }
-          } 
-          elsif ($schema && ref($schema) eq 'ARRAY') 
-          {
-               $body->{fields} = $schema;
-          }
-          
-          return $self->{request}->Execute('POST', '/collections', $body);
-     }
-
-     # /* Deletes a collection. */
-
-     sub Delete
-     {
-          my ($self, $name) = @_;
-          
-          Hlquery::Utils::Validator::ValidateCollectionName($name);
-          
-          return $self->{request}->Execute('DELETE', '/collections/' . uri_escape($name));
-     }
-
-     # /* Updates an existing collection. */
-
-     sub Update
-     {
-          my ($self, $name, $schema) = @_;
-          
-          Hlquery::Utils::Validator::ValidateCollectionName($name);
-          
-          return $self->{request}->Execute('POST', '/collections/' . uri_escape($name) . '/update', $schema);
-     }
-
-     # /* Returns formatted fields for a collection. */
-
-     sub GetFields
-     {
-          my ($self, $name) = @_;
-          
-          my $response = $self->Get($name);
-          
-          if (ref($response) ne 'Hlquery::Response')
-          {
-               return $response; # Probably a promise
-          }
-
-          if ($response->GetStatusCode() != 200) 
-          {
-               return $response;
-          }
-          
-          my $body = $response->GetBody();
-          
-          my @all_fields = ();
-          
-          my %field_types = ();
-          
-          if (ref($body) eq 'HASH' && exists $body->{searchable_fields} && ref($body->{searchable_fields}) eq 'ARRAY') 
-          {
-               foreach my $field (@{$body->{searchable_fields}}) 
-               {
-                    unless (grep { $_ eq $field } @all_fields) 
-                    {
-                         push @all_fields, $field;
-                    }
-                    
-                    $field_types{$field} = [] unless exists $field_types{$field};
-                    
-                    push @{$field_types{$field}}, 'searchable';
-               }
-          }
-          
-          if (ref($body) eq 'HASH' && exists $body->{filterable_fields} && ref($body->{filterable_fields}) eq 'ARRAY') 
-          {
-               foreach my $field (@{$body->{filterable_fields}}) 
-               {
-                    unless (grep { $_ eq $field } @all_fields) 
-                    {
-                         push @all_fields, $field;
-                    }
-                    
-                    $field_types{$field} = [] unless exists $field_types{$field};
-                    
-                    push @{$field_types{$field}}, 'filterable';
-               }
-          }
-          
-          if (ref($body) eq 'HASH' && exists $body->{sortable_fields} && ref($body->{sortable_fields}) eq 'ARRAY') 
-          {
-               foreach my $field (@{$body->{sortable_fields}}) 
-               {
-                    unless (grep { $_ eq $field } @all_fields) 
-                    {
-                         push @all_fields, $field;
-                    }
-                    
-                    $field_types{$field} = [] unless exists $field_types{$field};
-                    
-                    push @{$field_types{$field}}, 'sortable';
-               }
-          }
-          
-          my @fields = ();
-          
-          foreach my $field (@all_fields) 
-          {
-               push @fields, 
-               {
-                    name => $field,
-                    type => join(', ', @{$field_types{$field}})
-               };
-          }
-          
-          return Hlquery::Response->new(200, 
-          {
-               collection        => $name,
-               fields            => \@fields,
-               field_count       => scalar @fields,
-               searchable_fields => (ref($body) eq 'HASH' && exists $body->{searchable_fields}) ? $body->{searchable_fields} : [],
-               filterable_fields => (ref($body) eq 'HASH' && exists $body->{filterable_fields}) ? $body->{filterable_fields} : [],
-               sortable_fields   => (ref($body) eq 'HASH' && exists $body->{sortable_fields})   ? $body->{sortable_fields}   : []
-          });
-     }
-
-     1;
+    my ($class, $request) = @_;
+    return bless { request => $request }, $class;
 }
 
-__END__
+sub List
+{
+    my ($self, $offset, $limit) = @_;
+    return $self->{request}->Execute('GET', '/collections', undef, {
+        offset => defined $offset ? $offset : 0,
+        limit  => defined $limit ? $limit : 10,
+    });
+}
 
-=head1 NAME
+sub Get
+{
+    my ($self, $name) = @_;
+    return $self->{request}->Execute('GET', '/collections/' . uri_escape_utf8($name));
+}
 
-Hlquery::Collections - Collection management API for hlquery
+sub GetFields
+{
+    my ($self, $name) = @_;
+    my $response = $self->Get($name);
+    return $response unless $response->IsSuccess();
 
-=head1 DESCRIPTION
+    my $body = $response->GetBody();
+    return $response unless ref($body) eq 'HASH';
 
-This module provides methods for managing collections in an hlquery server.
-It is accessed via the C<Collections()> method of an L<Hlquery::Client> object.
+    my %field_types;
+    my @ordered_fields;
 
-=head1 METHODS
+    _collect_fields($body, 'searchable_fields', 'searchable', \%field_types, \@ordered_fields);
+    _collect_fields($body, 'filterable_fields', 'filterable', \%field_types, \@ordered_fields);
+    _collect_fields($body, 'sortable_fields',   'sortable',   \%field_types, \@ordered_fields);
 
-=head2 List($offset, $limit)
+    my @fields = map {
+        {
+            name => $_,
+            type => join(', ', @{ $field_types{$_} || [] }),
+        }
+    } @ordered_fields;
 
-Lists all collections with pagination.
+    my $result = {
+        collection        => $name,
+        field_count       => scalar(@fields),
+        fields            => \@fields,
+        searchable_fields => $body->{searchable_fields} || [],
+        filterable_fields => $body->{filterable_fields} || [],
+        sortable_fields   => $body->{sortable_fields} || [],
+    };
 
-=head2 Get($name)
+    return Hlquery::Response->new(
+        status_code => 200,
+        body        => $result,
+        raw_body    => '',
+        headers     => $response->GetHeaders(),
+        error       => undef,
+    );
+}
 
-Returns details for a specific collection.
+sub Create
+{
+    my ($self, $name, $schema) = @_;
+    $schema ||= {};
+    my %payload = %{ $schema };
+    $payload{name} = $name;
+    return $self->{request}->Execute('POST', '/collections', \%payload);
+}
 
-=head2 Create($name, $schema)
+sub Delete
+{
+    my ($self, $name) = @_;
+    return $self->{request}->Execute('DELETE', '/collections/' . uri_escape_utf8($name));
+}
 
-Creates a new collection with the given name and schema.
+sub Update
+{
+    my ($self, $name, $schema) = @_;
+    $schema ||= {};
+    return $self->{request}->Execute('POST', '/collections/' . uri_escape_utf8($name) . '/update', $schema);
+}
 
-=head2 Delete($name)
+sub _collect_fields
+{
+    my ($body, $key, $field_type, $field_types, $ordered_fields) = @_;
+    return unless ref($body->{$key}) eq 'ARRAY';
 
-Deletes the specified collection.
+    for my $field (@{ $body->{$key} })
+    {
+        next unless defined $field && !ref($field);
 
-=head2 Update($name, $schema)
+        if (!exists $field_types->{$field})
+        {
+            $field_types->{$field} = [];
+            push @{$ordered_fields}, $field;
+        }
 
-Updates the schema of an existing collection.
+        push @{$field_types->{$field}}, $field_type;
+    }
+}
 
-=head2 GetFields($name)
-
-Returns a formatted list of all fields in a collection.
-
-=head1 AUTHOR
-
-Carlos F. Ferry <carlos.ferry@gmail.com>
-
-=cut
+1;

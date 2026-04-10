@@ -1,197 +1,58 @@
-# /*
-#  * hlquery - Search beyond keywords.
-#  * http://www.hlquery.com
-#  *
-#  * Copyright (C) 2021-2026, Carlos F. Ferry <carlos.ferry@gmail.com>
-#  *
-#  * This file is part of hlquery, released under the BSD License version 3.
-#  * You are free to redistribute and/or modify this software
-#  * under the terms of the BSD License.
-#  * For more details, please visit: https://docs.hlquery.com
-#  */
+package Hlquery::Response;
 
-package Hlquery::Response 
+use strict;
+use warnings;
+
+sub new
 {
-     use strict;
-     use warnings;
+    my ($class, %args) = @_;
 
-     # /*
-     #  * Hlquery::Response - Encapsulates an hlquery server response.
-     #  *
-     #  * This class provides methods to access the status code, body, and headers
-     #  * of a response from the hlquery server.
-     #  */
+    my $self = {
+        status_code => $args{status_code} // 0,
+        body        => $args{body},
+        raw_body    => defined $args{raw_body} ? $args{raw_body} : '',
+        headers     => $args{headers} || {},
+        error       => $args{error},
+    };
 
-     # /* Constructor for the Response object. */
-
-     sub new 
-     {
-          my ($class, $status_code, $body, $headers, $decoder) = @_;
-
-          my $self = bless 
-          {
-               status_code => $status_code,
-               body        => $body,
-               headers     => $headers || {},
-               decoder     => $decoder
-          }, $class;
-
-          return $self;
-     }
-
-     # /* Returns the HTTP status code. */
-
-     sub GetStatusCode 
-     {
-          my $self = shift;
-
-          return $self->{status_code};
-     }
-
-     # /* Returns the response body. */
-
-     sub GetBody 
-     {
-          my $self = shift;
-
-          if ($self->{decoder} && defined $self->{body} && !ref($self->{body})) 
-          {
-               $self->{body} = $self->{decoder}->($self->{body});
-               $self->{decoder} = undef;
-          }
-
-          return $self->{body};
-     }
-
-     # /* Returns the 'data' field of the response body. */
-
-     sub GetData
-     {
-          my $self = shift;
-          
-          my $body = $self->GetBody();
-          
-          if (ref($body) eq 'HASH')
-          {
-               return $body->{data};
-          }
-          
-          return undef;
-     }
-
-     # /* Returns all response headers. */
-
-     sub GetHeaders 
-     {
-          my $self = shift;
-
-          return $self->{headers};
-     }
-
-     # /* Returns a specific response header. */
-
-     sub GetHeader
-     {
-          my ($self, $name) = @_;
-          
-          return $self->{headers}->{lc($name)};
-     }
-
-     # /* Checks if the request was successful (2xx). */
-
-     sub IsSuccess 
-     {
-          my $self = shift;
-
-          my $status = $self->{status_code};
-
-          return $status >= 200 && $status < 300;
-     }
-
-     # /* Checks if the request resulted in an error (4xx or 5xx). */
-
-     sub IsError 
-     {
-          my $self = shift;
-
-          return $self->{status_code} >= 400;
-     }
-
-     # /* Extracts and returns the error message if present. */
-
-     sub GetError 
-     {
-          my $self = shift;
-
-          my $body = $self->GetBody();
-
-          if ($self->IsError() && ref($body) eq 'HASH') 
-          {
-               return $body->{error} || $body->{message} || 'Unknown error.';
-          }
-
-          return undef;
-     }
-
-     # /* Converts the response to a hash for compatibility. */
-
-     sub ToHash 
-     {
-          my $self = shift;
-
-          return 
-          {
-               status => $self->{status_code},
-               body   => $self->GetBody()
-          };
-     }
-
-     1;
+    return bless $self, $class;
 }
 
-__END__
+sub GetStatusCode { return $_[0]->{status_code}; }
+sub GetBody       { return $_[0]->{body}; }
+sub GetRawBody    { return $_[0]->{raw_body}; }
+sub GetHeaders    { return $_[0]->{headers}; }
+sub GetError      { return $_[0]->{error}; }
 
-=head1 NAME
+sub GetData
+{
+    my ($self) = @_;
+    return unless ref($self->{body}) eq 'HASH';
+    return $self->{body}->{data};
+}
 
-Hlquery::Response - Encapsulates an hlquery server response
+sub IsSuccess
+{
+    my ($self) = @_;
+    return $self->{status_code} >= 200 && $self->{status_code} < 300;
+}
 
-=head1 DESCRIPTION
+sub IsError
+{
+    my ($self) = @_;
+    return !$self->IsSuccess();
+}
 
-This object is returned by all API calls in C<Hlquery::Client>. It provides
-methods to inspect the result of the request.
+sub ToHash
+{
+    my ($self) = @_;
+    return {
+        status_code => $self->{status_code},
+        body        => $self->{body},
+        raw_body    => $self->{raw_body},
+        headers     => $self->{headers},
+        error       => $self->{error},
+    };
+}
 
-=head1 METHODS
-
-=head2 GetStatusCode()
-
-Returns the HTTP status code (e.g., 200, 404, 500).
-
-=head2 GetBody()
-
-Returns the decoded JSON body of the response (usually a hash reference or array reference).
-
-=head2 GetData()
-
-Returns the C<data> field from the response body, if present.
-
-=head2 GetHeaders()
-
-Returns a hash reference containing all response headers (lowercase keys).
-
-=head2 IsSuccess()
-
-Returns true if the status code indicates success (2xx).
-
-=head2 IsError()
-
-Returns true if the status code indicates an error (4xx or 5xx).
-
-=head2 GetError()
-
-Returns the error message from the server if the request failed.
-
-=head1 AUTHOR
-
-Carlos F. Ferry <carlos.ferry@gmail.com>
-
-=cut
+1;

@@ -23,30 +23,18 @@ use Hlquery::Client;
 use JSON;
 
 my $client = Hlquery::Client->new('http://localhost:9200');
-
-# /* Get a real collection name first. */
-
-my $collections = $client->ListCollections(0, 1);
-my $collection_name = undef;
-
-if ($collections->IsSuccess()) 
-{
-    my $body = $collections->GetBody();
-    
-    if (ref($body->{collections}) eq 'ARRAY' && @{$body->{collections}} > 0) 
-    {
-        my $first = $body->{collections}->[0];
-        $collection_name = ref($first) eq 'HASH' && exists $first->{name} ? $first->{name} : $first;
-    }
-}
-
-unless ($collection_name) 
-{
-    print "No collections found. Run collections.pl first.\n";
-    exit 0;
-}
+my $collection_name = 'perl_docs_demo_' . time();
 
 my $json = JSON->new->utf8->pretty;
+
+$client->Collections()->Create($collection_name, {
+    fields => [
+        { name => 'title', type => 'string' },
+        { name => 'content', type => 'string' },
+    ],
+});
+
+print "Documents example using '$collection_name'.\n";
 
 # /* List documents. */
 
@@ -97,3 +85,5 @@ print "Update result: " . $result->GetStatusCode() . ".\n";
 
 $result = $client->Documents()->Delete($collection_name, 'doc_1');
 print "Delete result: " . $result->GetStatusCode() . ".\n";
+
+$client->Collections()->Delete($collection_name);

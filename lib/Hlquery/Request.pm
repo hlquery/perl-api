@@ -1,242 +1,164 @@
-# /*
-#  * hlquery - Search beyond keywords.
-#  * http://www.hlquery.com
-#  *
-#  * Copyright (C) 2021-2026, Carlos F. Ferry <carlos.ferry@gmail.com>
-#  *
-#  * This file is part of hlquery, released under the BSD License version 3.
-#  * You are free to redistribute and/or modify this software
-#  * under the terms of the BSD License.
-#  * For more details, please visit: https://docs.hlquery.com
-#  */
+package Hlquery::Request;
 
-package Hlquery::Request
+use strict;
+use warnings;
+
+use JSON qw(encode_json decode_json);
+use LWP::UserAgent;
+use HTTP::Request;
+use URI::Escape qw(uri_escape_utf8);
+
+use Hlquery::Response;
+
+sub new
 {
-     use strict;
-     use warnings;
-     use LWP::UserAgent;
-     use LWP::ConnCache;
-     use HTTP::Request;
-     use JSON::MaybeXS;
-     use URI;
-     use URI::Escape;
+    my ($class, $base_url, $options) = @_;
+    $options ||= {};
 
-     use Hlquery::Response;
-     use Hlquery::Exceptions;
+    my $ua = LWP::UserAgent->new(
+        agent   => 'hlquery-perl/1.0.0',
+        timeout => $options->{timeout} || 30,
+    );
+    $ua->env_proxy;
 
-     # /*
-     #  * Hlquery::Request - Internal HTTP request handler.
-     #  *
-     #  * Handles the low-level communication with the hlquery server.
-     #  */
+    my $self = {
+        base_url    => _normalize_base_url($base_url),
+        auth_token  => $options->{token},
+        auth_method => $options->{auth_method} || 'bearer',
+        user_agent  => $ua,
+    };
 
-     # /* Constructor for the Request handler. */
-
-     sub new
-     {
-          my ($class, $base_url, $timeout, $auth_token, $auth_method, $pool, $lazy) = @_;
-
-          $base_url =~ s/\/$//;
-          
-          $timeout //= 30;
-          
-          $auth_method //= 'bearer';
-
-          my $ua = LWP::UserAgent->new;
-          
-          $ua->timeout($timeout);
-          
-          $ua->agent("hlquery-perl-client/$Hlquery::VERSION");
-
-          if ($pool) 
-          {
-               $ua->conn_cache(LWP::ConnCache->new);
-          }
-
-          my $self = bless 
-          {
-               base_url    => $base_url,
-               timeout     => $timeout,
-               auth_token  => $auth_token,
-               auth_method => $auth_method,
-               ua          => $ua,
-               json        => JSON::MaybeXS->new->utf8->allow_nonref,
-               lazy        => $lazy
-          }, $class;
-
-          return $self;
-     }
-
-     # /* Sets the authentication token. */
-
-     sub SetAuthToken
-     {
-          my ($self, $token, $method) = @_;
-
-          $self->{auth_token}  = $token;
-          
-          $self->{auth_method} = $method // 'bearer';
-     }
-
-     # /* Clears authentication information. */
-
-     sub ClearAuth
-     {
-          my $self = shift;
-
-          $self->{auth_token} = undef;
-     }
-
-     # /* Executes an HTTP request. */
-
-     sub Execute
-     {
-          my ($self, $method, $path, $body, $query_params) = @_;
-
-          my $url = $self->{base_url} . $path;
-
-          if ($query_params && ref($query_params) eq 'HASH' && keys %$query_params) 
-          {
-               my $uri = URI->new($url);
-               
-               foreach my $key (sort keys %$query_params) 
-               {
-                    $uri->query_param($key => $query_params->{$key});
-               }
-               
-               $url = $uri->as_string;
-          }
-
-          my $request = HTTP::Request->new($method => $url);
-          
-          $request->header('Content-Type' => 'application/json');
-          
-          $request->header('Accept'       => 'application/json');
-
-          if ($self->{auth_token}) 
-          {
-               if ($self->{auth_method} eq 'api-key') 
-               {
-                    $request->header('X-API-Key' => $self->{auth_token});
-               } 
-               else 
-               {
-                    $request->header('Authorization' => 'Bearer ' . $self->{auth_token});
-               }
-          }
-
-          if (defined $body) 
-          {
-               my $body_str;
-               
-               if (ref($body) eq 'HASH' || ref($body) eq 'ARRAY') 
-               {
-                    $body_str = $self->{json}->encode($body);
-               } 
-               else 
-               {
-                    $body_str = $body;
-               }
-               
-               $request->content($body_str);
-          }
-
-          my $response = $self->{ua}->request($request);
-          
-          my $status_code = $response->code;
-          
-          my $response_body = $response->decoded_content // $response->content;
-
-          my %response_headers;
-          
-          foreach my $header ($response->header_field_names) 
-          {
-               $response_headers{lc($header)} = $response->header($header);
-          }
-
-          my $decoded;
-          my $decoder;
-          
-          if ($response_body) 
-          {
-               $decoder = sub {
-                    my $body = shift;
-                    my $out;
-                    eval { $out = $self->{json}->decode($body); };
-                    return $@ ? $body : $out;
-               };
-
-               unless ($self->{lazy}) 
-               {
-                    $decoded = $decoder->($response_body);
-                    $decoder = undef;
-               } 
-               else 
-               {
-                    $decoded = $response_body;
-               }
-          }
-
-          # /* Handle specific error conditions. */
-
-          if ($status_code == 403) 
-          {
-               my $check_decoded = $decoded;
-               
-               if ($decoder) 
-               {
-                    $check_decoded = $decoder->($response_body);
-               }
-
-               if (ref($check_decoded) eq 'HASH') 
-               {
-                    my $error = $check_decoded->{error} // '';
-                    my $message = $check_decoded->{message} // '';
-
-                    if ($error =~ /Authentication is disabled/ || $message =~ /Tokens are not accepted when authentication is disabled/) 
-                    {
-                         die Hlquery::AuthenticationException->new(
-                             "Authentication is disabled on the server. Remove the token from your client configuration. " .
-                             "Server message: " . ($message || $error) . "."
-                         );
-                    }
-               }
-          }
-
-          return Hlquery::Response->new($status_code, $decoded, \%response_headers, $decoder);
-     }
-
-     1;
+    return bless $self, $class;
 }
 
-__END__
+sub SetAuthToken
+{
+    my ($self, $token, $method) = @_;
+    $self->{auth_token} = $token;
+    $self->{auth_method} = $method || 'bearer';
+    return $self;
+}
 
-=head1 NAME
+sub Execute
+{
+    my ($self, $method, $path, $payload, $query_params, $headers) = @_;
 
-Hlquery::Request - Internal HTTP request handler for the hlquery Perl API
+    my $url = $self->{base_url} . $path;
+    my $query = _build_query_string($query_params);
+    $url .= "?$query" if length $query;
 
-=head1 DESCRIPTION
+    my $request = HTTP::Request->new($method => $url);
+    $request->header('Accept' => 'application/json');
 
-This module is used internally by C<Hlquery::Client> to perform HTTP requests
-to the hlquery server. It handles URL construction, JSON encoding/decoding,
-and authentication headers.
+    if ($headers && ref($headers) eq 'HASH')
+    {
+        for my $name (keys %{$headers})
+        {
+            next unless defined $headers->{$name};
+            $request->header($name => $headers->{$name});
+        }
+    }
 
-=head1 METHODS
+    if (defined $self->{auth_token} && length $self->{auth_token})
+    {
+        if (($self->{auth_method} || '') eq 'api-key')
+        {
+            $request->header('X-API-Key' => $self->{auth_token});
+        }
+        else
+        {
+            $request->header('Authorization' => 'Bearer ' . $self->{auth_token});
+        }
+    }
 
-=head2 new($base_url, $timeout, $auth_token, $auth_method)
+    if (defined $payload)
+    {
+        my $body = ref($payload) ? encode_json($payload) : $payload;
+        $request->header('Content-Type' => 'application/json');
+        $request->content($body);
+    }
 
-Creates a new request handler instance.
+    my $http_response = $self->{user_agent}->request($request);
+    my $raw_body = defined $http_response->decoded_content ? $http_response->decoded_content : '';
+    my $decoded_body = _decode_body($raw_body, $http_response->header('Content-Type'));
+    my $error = undef;
 
-=head2 SetAuthToken($token, $method)
+    if (!$http_response->is_success)
+    {
+        if (ref($decoded_body) eq 'HASH')
+        {
+            $error = $decoded_body->{message} || $decoded_body->{error} || $http_response->message;
+        }
+        else
+        {
+            $error = $http_response->message;
+        }
+    }
 
-Sets the authentication token and method.
+    return Hlquery::Response->new(
+        status_code => $http_response->code + 0,
+        body        => $decoded_body,
+        raw_body    => $raw_body,
+        headers     => { $http_response->headers->flatten },
+        error       => $error,
+    );
+}
 
-=head2 Execute($method, $path, $body, $query_params)
+sub _normalize_base_url
+{
+    my ($base_url) = @_;
+    $base_url ||= 'http://localhost:9200';
+    $base_url =~ s{/\z}{};
+    return $base_url;
+}
 
-Executes an HTTP request and returns an L<Hlquery::Response> object.
+sub _decode_body
+{
+    my ($raw_body, $content_type) = @_;
+    return undef if !defined $raw_body || $raw_body eq '';
 
-=head1 AUTHOR
+    if (defined $content_type && $content_type =~ m{application/json}i)
+    {
+        my $decoded = eval { decode_json($raw_body) };
+        return $@ ? $raw_body : $decoded;
+    }
 
-Carlos F. Ferry <carlos.ferry@gmail.com>
+    if ($raw_body =~ /^\s*[\{\[]/)
+    {
+        my $decoded = eval { decode_json($raw_body) };
+        return $@ ? $raw_body : $decoded;
+    }
 
-=cut
+    return $raw_body;
+}
+
+sub _build_query_string
+{
+    my ($query_params) = @_;
+    return '' unless $query_params && ref($query_params) eq 'HASH';
+
+    my @pairs;
+    for my $key (sort keys %{$query_params})
+    {
+        my $value = $query_params->{$key};
+        next unless defined $value;
+
+        if (ref($value) eq 'ARRAY')
+        {
+            push @pairs, map { uri_escape_utf8($key) . '=' . uri_escape_utf8(defined($_) ? "$_" : '') } @{$value};
+            next;
+        }
+
+        if (ref($value))
+        {
+            push @pairs, uri_escape_utf8($key) . '=' . uri_escape_utf8(encode_json($value));
+            next;
+        }
+
+        push @pairs, uri_escape_utf8($key) . '=' . uri_escape_utf8("$value");
+    }
+
+    return join('&', @pairs);
+}
+
+1;

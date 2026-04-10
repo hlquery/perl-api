@@ -23,35 +23,48 @@ use Hlquery::Client;
 use JSON;
 
 my $client = Hlquery::Client->new('http://localhost:9200');
+my $collection_name = 'perl_collections_demo_' . time();
+my $json = JSON->new->utf8->pretty;
+
+print "Collections example using '$collection_name'.\n";
 
 # /* List collections. */
 
 my $collections = $client->ListCollections(0, 10);
-my $json = JSON->new->utf8->pretty;
-
 print "Collections: " . $json->encode($collections->GetBody()) . "\n";
+
+# /* Create a collection. */
+
+my $create = $client->Collections()->Create($collection_name, {
+    fields => [
+        { name => 'title', type => 'string' },
+        { name => 'price', type => 'float' },
+    ],
+});
+
+print "Create result: " . $create->GetStatusCode() . ".\n";
 
 # /* Get collection details. */
 
-if ($collections->IsSuccess()) 
-{
-    my $body = $collections->GetBody();
-    
-    if (ref($body->{collections}) eq 'ARRAY' && @{$body->{collections}} > 0) 
-    {
-        my $first_collection = $body->{collections}->[0];
-        my $collection_name = ref($first_collection) eq 'HASH' && exists $first_collection->{name} 
-            ? $first_collection->{name} 
-            : $first_collection;
-        
-        # /* Get collection. */
-        
-        my $collection = $client->GetCollection($collection_name);
-        print "Collection details: " . $json->encode($collection->GetBody()) . "\n";
-        
-        # /* Get formatted fields. */
-        
-        my $fields = $client->GetCollectionFields($collection_name);
-        print "Collection fields: " . $json->encode($fields->GetBody()) . "\n";
-    }
-}
+my $collection = $client->GetCollection($collection_name);
+print "Collection details: " . $json->encode($collection->GetBody()) . "\n";
+
+# /* Get formatted fields. */
+
+my $fields = $client->GetCollectionFields($collection_name);
+print "Collection fields: " . $json->encode($fields->GetBody()) . "\n";
+
+# /* Update collection. */
+
+my $update = $client->UpdateCollection($collection_name, {
+    fields => [
+        { name => 'description', type => 'string' },
+    ],
+});
+
+print "Update result: " . $update->GetStatusCode() . ".\n";
+
+# /* Delete collection. */
+
+my $delete = $client->Collections()->Delete($collection_name);
+print "Delete result: " . $delete->GetStatusCode() . ".\n";

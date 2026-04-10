@@ -296,6 +296,17 @@ $results = $search->MultiSearch([
     { collection => 'col1', q => 'query1' },
     { collection => 'col2', q => 'query2' }
 ]);
+
+# Vector search (POST body)
+my $vector_results = $search->VectorSearch('collection', {
+    body => {
+        vector => [0.1, 0.2, 0.3],
+        field_name => 'embedding',
+        topk => 5,
+        include_distance => JSON::true,
+        query_params => { ef => 128, nprobe => 8, is_linear => JSON::true }
+    }
+});
 ```
 
 #### Convenience Method
@@ -314,16 +325,16 @@ my $results = $client->Search('collection', {
 The `Search()` method accepts flexible parameters:
 
 #### Query String (`q`)
-The `q` parameter supports advanced query syntax:
-- **NOT**: `q => '!apple'` or `q => 'NOT apple'`
-- **FIELD**: `q => 'title:laptop'` or `q => 'price:100'`
-- **RANGE**: `q => 'price:[100 TO 500]'` or `q => 'price:{100 TO 500}'`
+The `q` parameter supports the current lexical query syntax:
+- **FIELD**: `q => 'title:laptop'`
+- **NOT**: `q => 'title:laptop NOT title:refurbished'` or `q => 'NOT apple'`
+- **Boolean**: `q => 'title:laptop OR title:notebook'`
 - **WILDCARD**: `q => 'laptop*'`, `q => '*laptop'`, `q => 'lap*top'`
-- **REGEX**: `q => 'title:/pattern/'`
-- **FUZZY**: `q => 'laptop~'` or `q => 'laptop~2'`
-- **BOOST**: `q => 'laptop^2.0'` or `q => 'laptop^2'`
-- **Boolean**: `q => 'laptop AND computer'`, `q => 'laptop OR notebook'`
 - **Phrase**: `q => '"exact phrase"'`
+
+Use `filter_by` for field filters and numeric comparisons, for example:
+- `filter_by => 'price:>100&&category:electronics'`
+- `filter_by => 'category:food||category:nature'`
 
 #### Other Parameters
 - `query_by` - Fields to search in (comma-separated string or array reference)
