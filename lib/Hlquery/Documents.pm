@@ -5,6 +5,14 @@ use warnings;
 
 use URI::Escape qw(uri_escape_utf8);
 
+BEGIN {
+    package Hlquery::documents;
+    our @ISA = ('Hlquery::Documents');
+    $INC{'Hlquery/documents.pm'} = __FILE__;
+}
+
+package Hlquery::Documents;
+
 sub new
 {
     my ($class, $request) = @_;

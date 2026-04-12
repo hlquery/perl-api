@@ -9,6 +9,14 @@ use Hlquery::Documents;
 use Hlquery::Request;
 use Hlquery::Search;
 
+BEGIN {
+    package Hlquery::client;
+    our @ISA = ('Hlquery::Client');
+    $INC{'Hlquery/client.pm'} = __FILE__;
+}
+
+package Hlquery::Client;
+
 sub new
 {
     my ($class, $base_url, $options) = @_;

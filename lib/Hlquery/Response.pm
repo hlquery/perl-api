@@ -3,6 +3,14 @@ package Hlquery::Response;
 use strict;
 use warnings;
 
+BEGIN {
+    package Hlquery::response;
+    our @ISA = ('Hlquery::Response');
+    $INC{'Hlquery/response.pm'} = __FILE__;
+}
+
+package Hlquery::Response;
+
 sub new
 {
     my ($class, %args) = @_;

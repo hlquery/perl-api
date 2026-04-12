@@ -6,6 +6,14 @@ use warnings;
 use URI::Escape qw(uri_escape_utf8);
 use Hlquery::Response;
 
+BEGIN {
+    package Hlquery::collections;
+    our @ISA = ('Hlquery::Collections');
+    $INC{'Hlquery/collections.pm'} = __FILE__;
+}
+
+package Hlquery::Collections;
+
 sub new
 {
     my ($class, $request) = @_;

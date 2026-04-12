@@ -10,6 +10,14 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Hlquery::Response;
 
+BEGIN {
+    package Hlquery::request;
+    our @ISA = ('Hlquery::Request');
+    $INC{'Hlquery/request.pm'} = __FILE__;
+}
+
+package Hlquery::Request;
+
 sub new
 {
     my ($class, $base_url, $options) = @_;

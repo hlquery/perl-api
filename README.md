@@ -2,10 +2,20 @@
   <img src="https://docs.hlquery.com/img/hlquery/2.png" alt="hlquery logo" width="200">
 </div>
 
+<div align="center">
 
-# hlquery Perl API Client
+**A modular Perl client library for hlquery, designed with a familiar and intuitive API structure.**
 
-A modular Perl client library for hlquery, designed with a familiar and intuitive API structure.
+[![Twitter Follow](https://img.shields.io/twitter/url/https/x.com/hlquery.svg?style=social&label=Follow%20%40hlquery)](https://x.com/hlquery)
+[![Linux Build](https://github.com/hlquery/perl-api/workflows/Linux%20build/badge.svg)](https://github.com/hlquery/cpp-api/actions)
+[![macOS Build](https://github.com/hlquery/perl-api/workflows/macOS%20Build/badge.svg)](https://github.com/hlquery/cpp-api/actions)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/cpp-api/pulse)
+[![GitHub stars](https://img.shields.io/github/stars/hlquery/perl-api?style=social)](https://github.com/hlquery/cpp-api/stargazers)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+[Documentation](https://docs.hlquery.com) • [hlquery](https://github.com/hlquery/hlquery) • [Discord](https://discord.hlquery.com)
+
+</div>
 
 ## Features
 
@@ -43,6 +53,11 @@ Add the lib directory to your Perl path:
 use lib '/path/to/hlquery/etc/api/perl/lib';
 use Hlquery::Client;
 ```
+
+Use the canonical `Hlquery::Client`, `Hlquery::Collections`, `Hlquery::Documents`,
+`Hlquery::Request`, `Hlquery::Response`, and `Hlquery::Search` module names. Lowercase
+imports such as `Hlquery::client` are no longer supported as direct file-based imports
+because they create release tarball collisions on case-insensitive filesystems.
 
 ## Quick Start
 
@@ -83,6 +98,24 @@ $client->SetAuthToken('your_token_here', 'bearer');
 $client->SetAuthToken('your_token_here', 'api-key');
 ```
 
+### Reduce Text Example
+
+If the `ai_search` module is enabled, you can use the raw request helper to summarize a stored document:
+
+```perl
+my $summary = $client->ExecuteRequest(
+    'GET',
+    '/modules/ai_search/talk',
+    undef,
+    {
+        q   => 'summarize onboarding guide in docs',
+        run => 'true',
+    }
+);
+
+print $summary->GetRawBody() . "\n";
+```
+
 ## Architecture
 
 ### Core Classes
@@ -103,35 +136,22 @@ Response wrapper with helper methods:
 - `GetError()` - Get error message
 - `ToHash()` - Convert to hash format (for backward compatibility)
 
-#### `Hlquery::Collections`
-Collection management operations (List, Get, Create, Delete, Update).
+#### API Classes
 
-#### `Hlquery::Documents`
-Document CRUD operations (List, Get, Add, Update, Delete, ImportDocuments).
+`Hlquery::Collections` manages collections (`List`, `Get`, `Create`, `Delete`, `Update`).
+`Hlquery::Documents` handles document CRUD plus `ImportDocuments`.
+`Hlquery::Search` covers search requests and parameter normalization.
 
-#### `Hlquery::Search`
-Search operations with flexible parameter formats.
+### Utilities
 
-### Utility Classes
-
-#### `Hlquery::Utils::Auth`
-Authentication utilities (token generation, validation).
-
-#### `Hlquery::Utils::Config`
-Configuration management (defaults, URL validation).
-
-#### `Hlquery::Utils::Validator`
-Input validation for all operations.
+`Hlquery::Utils::Auth` handles token helpers and validation.
+`Hlquery::Utils::Config` provides defaults and URL/config parsing.
+`Hlquery::Utils::Validator` validates client input before requests are sent.
 
 ### Exceptions
 
-- `Hlquery::Exception` - Base exception
-- `Hlquery::AuthenticationException` - Authentication errors
-- `Hlquery::RequestException` - Request errors
-- `Hlquery::ValidationException` - Validation errors
-- `Hlquery::CollectionException` - Collection operation errors
-- `Hlquery::DocumentException` - Document operation errors
-- `Hlquery::SearchException` - Search operation errors
+`Hlquery::Exception` is the base type.
+Use `Hlquery::AuthenticationException`, `Hlquery::RequestException`, `Hlquery::ValidationException`, `Hlquery::CollectionException`, `Hlquery::DocumentException`, and `Hlquery::SearchException` for more specific failures.
 
 ## API Methods
 
