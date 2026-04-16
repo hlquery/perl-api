@@ -7,10 +7,8 @@
 **A modular Perl client library for hlquery, designed with a familiar and intuitive API structure.**
 
 [![Twitter Follow](https://img.shields.io/twitter/url/https/x.com/hlquery.svg?style=social&label=Follow%20%40hlquery)](https://x.com/hlquery)
-[![Linux Build](https://github.com/hlquery/perl-api/workflows/Linux%20build/badge.svg)](https://github.com/hlquery/cpp-api/actions)
-[![macOS Build](https://github.com/hlquery/perl-api/workflows/macOS%20Build/badge.svg)](https://github.com/hlquery/cpp-api/actions)
-[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/cpp-api/pulse)
-[![GitHub stars](https://img.shields.io/github/stars/hlquery/perl-api?style=social)](https://github.com/hlquery/cpp-api/stargazers)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/perl-api/pulse)
+[![GitHub stars](https://img.shields.io/github/stars/hlquery/perl-api?style=social)](https://github.com/hlquery/perl-api/stargazers)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 [Documentation](https://docs.hlquery.com) • [hlquery](https://github.com/hlquery/hlquery) • [Discord](https://discord.hlquery.com)
@@ -29,7 +27,7 @@
 -  **Minimal Dependencies**: Uses standard Perl modules (LWP, JSON, URI)
 
 
-## Installation
+### Installation
 
 ### Prerequisites
 
@@ -50,8 +48,8 @@ cpanm --installdeps .
 Add the lib directory to your Perl path:
 
 ```perl
-use lib '/path/to/hlquery/etc/api/perl/lib';
-use Hlquery::Client;
+$ use lib '/path/to/hlquery/etc/api/perl/lib';
+$ use Hlquery::Client;
 ```
 
 Use the canonical `Hlquery::Client`, `Hlquery::Collections`, `Hlquery::Documents`,
@@ -244,49 +242,6 @@ $result = $documents->Delete('collection', 'doc_id');
 $result = $documents->ImportDocuments('collection', [$doc1, $doc2, $doc3]);
 ```
 
-#### Field Value Character Restrictions
-
-**Important**: String field values have character restrictions:
-
-**❌ Invalid Characters** (not allowed):
-- Commas (`,`) - Reserved for internal parsing
-
-** Valid Characters** (allowed):
-- Letters, numbers, underscores (`_`), hyphens (`-`), spaces, periods, and most punctuation (except commas)
-
-**Examples:**
-
- **Valid:**
-```perl
-my $doc = {
-    id => 'doc1',
-    tags => 'tag1_tag2_tag3',        #  Use underscores
-    cast => 'Actor1_Actor2',          #  Use underscores
-    genre => 'Action_Drama'            #  Use underscores
-};
-
-# Or use arrays for multiple values:
-my $doc2 = {
-    id => 'doc2',
-    tags => ['tag1', 'tag2', 'tag3']  #  Arrays are fine
-};
-```
-
-❌ **Invalid:**
-```perl
-my $doc = {
-    id => 'doc1',
-    tags => 'tag1,tag2,tag3',         # ❌ Commas not allowed
-    cast => 'Actor1, Actor2',         # ❌ Commas not allowed
-    genre => 'Action,Drama'           # ❌ Commas not allowed
-};
-```
-
-**Workarounds:**
-- Use underscores (`_`) or spaces instead of commas
-- Use arrays for multiple values: `tags => ['tag1', 'tag2', 'tag3']`
-- Use separate fields if you need comma-separated data
-
 #### Convenience Methods
 
 ```perl
@@ -432,40 +387,6 @@ my $hash = $response->ToHash();
 # Returns: { status => 200, body => {...} }
 ```
 
-## Error Handling
-
-The client throws exceptions for errors:
-
-```perl
-use Hlquery::Client;
-use Hlquery::Exceptions;
-
-eval {
-    my $result = $client->Search('collection', { q => 'test' });
-    
-    if ($result->IsError()) {
-        # Handle HTTP error
-        print "Error: " . $result->GetError() . "\n";
-    }
-};
-if ($@) {
-    if (ref($@) && $@->isa('Hlquery::RequestException')) {
-        # Handle request errors
-        print "Request failed: " . $@->Message() . "\n";
-        print "Status: " . $@->StatusCode() . "\n";
-    } elsif (ref($@) && $@->isa('Hlquery::AuthenticationException')) {
-        # Handle authentication errors
-        print "Auth failed: " . $@->Message() . "\n";
-    } elsif (ref($@) && $@->isa('Hlquery::ValidationException')) {
-        # Handle validation errors
-        print "Validation failed: " . $@->Message() . "\n";
-    } else {
-        # Handle other errors
-        print "Error: $@\n";
-    }
-}
-```
-
 ## Examples
 
 ### Complete Example
@@ -507,18 +428,3 @@ Check the `examples/` directory for organized examples:
 - URI::Escape - For URL encoding
 - Digest::MD5 - For token generation
 
-## Installation
-
-This package can be installed via CPAN (when available) or manually:
-
-```bash
-# Install dependencies
-cpanm LWP::UserAgent JSON URI URI::Escape Digest::MD5
-
-# Use the library
-perl -Ilib -MHlquery::Client -e '...'
-```
-
-## Architecture
-
-The hlquery Perl client follows a modular design, separating the core client from specific API implementations for collections, documents, and search. This makes the library easy to maintain and extend.
