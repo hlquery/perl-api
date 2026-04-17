@@ -6,14 +6,14 @@
 
 **A modular Perl client library for hlquery, designed with a familiar and intuitive API structure.**
 
-[![Twitter Follow](https://img.shields.io/twitter/url/https/x.com/hlquery.svg?style=social&label=Follow%20%40hlquery)](https://x.com/hlquery)
+[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
 [![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/perl-api/pulse)
-[![GitHub stars](https://img.shields.io/github/stars/hlquery/perl-api?style=social)](https://github.com/hlquery/perl-api/stargazers)
+[![perl-api](https://img.shields.io/badge/GitHub-perl--api-181717?logo=github&logoColor=white)](https://github.com/hlquery/perl-api/stargazers)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-[Documentation](https://docs.hlquery.com) • [hlquery](https://github.com/hlquery/hlquery) • [Discord](https://discord.hlquery.com)
-
 </div>
+
+# hlquery Perl API Client
 
 ## Features
 
@@ -427,4 +427,3 @@ Check the `examples/` directory for organized examples:
 - URI - For URL handling
 - URI::Escape - For URL encoding
 - Digest::MD5 - For token generation
-
