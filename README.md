@@ -98,20 +98,19 @@ $client->SetAuthToken('your_token_here', 'api-key');
 
 ### Reduce Text Example
 
-If the `ai_search` module is enabled, you can use the raw request helper to summarize a stored document:
+You can use the raw request helper to call custom module routes directly:
 
 ```perl
-my $summary = $client->ExecuteRequest(
+my $module_response = $client->ExecuteRequest(
     'GET',
-    '/modules/ai_search/talk',
+    '/modules/<name>/<route>',
     undef,
     {
-        q   => 'summarize onboarding guide in docs',
-        run => 'true',
+        q   => 'example query',
     }
 );
 
-print $summary->GetRawBody() . "\n";
+print $module_response->GetRawBody() . "\n";
 ```
 
 ## Architecture
