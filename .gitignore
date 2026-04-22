@@ -1,0 +1,9 @@
+blib/
+pm_to_blib
+*.o
+*.bs
+_build/
+Build
+MYMETA.*
+Makefile
+!Makefile.PL
