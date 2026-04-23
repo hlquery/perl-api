@@ -21,7 +21,7 @@ use URI::Escape;
 
 # /* Configuration variables. */
 
-my $BASE_URL        = $ENV{HLQUERY_URL} // 'http://localhost:9200';
+my $BASE_URL        = $ENV{HLQ_BASE_URL} // $ENV{HLQUERY_BASE_URL} // $ENV{HLQUERY_URL} // 'http://localhost:9200';
 my $COMMAND         = $ARGV[0] // 'all';
 my $TEST_TOKEN      = undef;
 my $OFFSET          = 0;

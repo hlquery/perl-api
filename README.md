@@ -65,7 +65,7 @@ because they create release tarball collisions on case-insensitive filesystems.
 use Hlquery::Client;
 
 # Initialize client
-my $client = Hlquery::Client->new('http://localhost:9200');
+my $client = Hlquery::Client->new($ENV{HLQ_BASE_URL} // $ENV{HLQUERY_BASE_URL} // 'http://localhost:9200');
 
 # Health check
 my $health = $client->Health();
