@@ -4,425 +4,183 @@
 
 <div align="center">
 
-**A modular Perl client library for hlquery, designed with a familiar and intuitive API structure.**
+**Perl client resources for `hlquery`: packaging files, examples, and API usage notes.**
 
-[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
-[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/perl-api/pulse)
-[![perl-api](https://img.shields.io/badge/GitHub-perl--api-181717?logo=github&logoColor=white)](https://github.com/hlquery/perl-api/stargazers)
+[![GitHub](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 </div>
 
-# hlquery Perl API Client
+# hlquery Perl API
 
-## Features
+This directory contains the Perl client packaging metadata, runnable examples,
+and README documentation used by the `hlquery` Perl API.
 
--  **Modular Architecture**: Clean separation of concerns with organized classes
--  **Intuitive API**: Familiar and easy-to-use structure
--  **Authentication Support**: Bearer token and X-API-Key authentication
--  **Flexible Parameters**: Support for multiple parameter formats
--  **Auto-detection**: Automatically detects searchable fields when not specified
--  **Type-safe Responses**: Response objects with helper methods
--  **Comprehensive Validation**: Input validation for all operations
--  **Minimal Dependencies**: Uses standard Perl modules (LWP, JSON, URI)
+## What Is Here
 
+- `Makefile.PL` and `cpanfile` for dependency management and packaging
+- `example.pl` for quick end-to-end API checks
+- `examples/` for focused collection, document, search, and flush examples
+- `LICENSE` for the BSD 3-Clause license
 
-### Installation
+## Installation
 
-### Prerequisites
-
-Install required Perl modules:
-
-```bash
-cpanm LWP::UserAgent JSON URI URI::Escape Digest::MD5
-```
-
-Or using cpanfile:
+Install the declared dependencies:
 
 ```bash
 cpanm --installdeps .
 ```
 
-### Manual Installation
+Or install the core runtime modules directly:
 
-Add the lib directory to your Perl path:
-
-```perl
-$ use lib '/path/to/hlquery/etc/api/perl/lib';
-$ use Hlquery::Client;
+```bash
+cpanm LWP::UserAgent JSON JSON::MaybeXS URI URI::Escape Digest::MD5 Mojolicious Promises
 ```
 
-Use the canonical `Hlquery::Client`, `Hlquery::Collections`, `Hlquery::Documents`,
-`Hlquery::Request`, `Hlquery::Response`, and `Hlquery::Search` module names. Lowercase
-imports such as `Hlquery::client` are no longer supported as direct file-based imports
-because they create release tarball collisions on case-insensitive filesystems.
+If you are working from a Perl client checkout or release tarball that includes
+the client modules under `lib/`, load the client like this:
+
+```perl
+use lib '/path/to/hlquery/etc/api/perl/lib';
+use Hlquery::Client;
+```
 
 ## Quick Start
-
-### Basic Usage
 
 ```perl
 use Hlquery::Client;
 
-# Initialize client
-my $client = Hlquery::Client->new($ENV{HLQ_BASE_URL} // $ENV{HLQUERY_BASE_URL} // 'http://localhost:9200');
+my $base_url = $ENV{HLQ_BASE_URL}
+    // $ENV{HLQUERY_BASE_URL}
+    // 'http://localhost:9200';
 
-# Health check
+my $client = Hlquery::Client->new($base_url);
+
 my $health = $client->Health();
-print "Status: " . $health->GetStatusCode() . "\n";
+print "Health status: " . $health->GetStatusCode() . "\n";
 
-# List collections
 my $collections = $client->ListCollections(0, 10);
 if ($collections->IsSuccess()) {
     my $body = $collections->GetBody();
-    print "Found " . scalar(@{$body->{collections}}) . " collections\n";
+    print "Collections: " . scalar(@{$body->{collections} || []}) . "\n";
 }
 ```
 
-### With Authentication
+## Authentication
 
 ```perl
-# Method 1: Set token in constructor
 my $client = Hlquery::Client->new('http://localhost:9200', {
     token => 'your_token_here',
-    auth_method => 'bearer'  # or 'api-key'
+    auth_method => 'bearer',
 });
 
-# Method 2: Set token dynamically
-my $client = Hlquery::Client->new('http://localhost:9200');
 $client->SetAuthToken('your_token_here', 'bearer');
-
-# Method 3: Use X-API-Key
-$client->SetAuthToken('your_token_here', 'api-key');
+$client->SetAuthToken('your_api_key_here', 'api-key');
 ```
 
-### Reduce Text Example
+## Common APIs
 
-You can use the raw request helper to call custom module routes directly:
-
-```perl
-my $module_response = $client->ExecuteRequest(
-    'GET',
-    '/modules/<name>/<route>',
-    undef,
-    {
-        q   => 'example query',
-    }
-);
-
-print $module_response->GetRawBody() . "\n";
-```
-
-## Architecture
-
-### Core Classes
-
-#### `Hlquery::Client`
-Main client class that provides access to all API operations.
-
-#### `Hlquery::Request`
-Handles HTTP requests, authentication, and error handling using LWP::UserAgent.
-
-#### `Hlquery::Response`
-Response wrapper with helper methods:
-- `GetStatusCode()` - Get HTTP status code
-- `GetBody()` - Get response body
-- `GetData()` - Get 'data' field from response body
-- `IsSuccess()` - Check if request was successful
-- `IsError()` - Check if request failed
-- `GetError()` - Get error message
-- `ToHash()` - Convert to hash format (for backward compatibility)
-
-#### API Classes
-
-`Hlquery::Collections` manages collections (`List`, `Get`, `Create`, `Delete`, `Update`).
-`Hlquery::Documents` handles document CRUD plus `ImportDocuments`.
-`Hlquery::Search` covers search requests and parameter normalization.
-
-### Utilities
-
-`Hlquery::Utils::Auth` handles token helpers and validation.
-`Hlquery::Utils::Config` provides defaults and URL/config parsing.
-`Hlquery::Utils::Validator` validates client input before requests are sent.
-
-### Exceptions
-
-`Hlquery::Exception` is the base type.
-Use `Hlquery::AuthenticationException`, `Hlquery::RequestException`, `Hlquery::ValidationException`, `Hlquery::CollectionException`, `Hlquery::DocumentException`, and `Hlquery::SearchException` for more specific failures.
-
-## API Methods
-
-### System APIs
-
-#### `Health()`
-Check server health status.
-
-```perl
-my $health = $client->Health();
-if ($health->IsSuccess()) {
-    my $body = $health->GetBody();
-    print "Status: " . $body->{status} . "\n";
-}
-```
-
-#### `Stats()`
-Get server statistics.
-
-```perl
-my $stats = $client->Stats();
-```
-
-#### `Info()`
-Get server information.
-
-```perl
-my $info = $client->Info();
-```
-
-### Collections API
-
-#### Using the Collections API Object
+Collections:
 
 ```perl
 my $collections = $client->Collections();
-
-# List collections
-my $result = $collections->List(0, 10);
-
-# Get collection
-$result = $collections->Get('my_collection');
-
-# Create collection
-$result = $collections->Create('new_collection', $schema);
-
-# Delete collection
-$result = $collections->Delete('collection_name');
-
-# Get formatted fields
-$result = $collections->GetFields('my_collection');
+my $list = $collections->List(0, 10);
+my $get = $collections->Get('music');
+my $create = $collections->Create('music', {
+    fields => [
+        { name => 'title', type => 'string' },
+        { name => 'artist', type => 'string' },
+    ],
+});
 ```
 
-#### Convenience Methods
-
-```perl
-# List collections
-my $collections = $client->ListCollections(0, 10);
-
-# Get collection details
-my $collection = $client->GetCollection('my_collection');
-
-# Get collection fields (formatted)
-my $fields = $client->GetCollectionFields('my_collection');
-```
-
-### Documents API
-
-#### Using the Documents API Object
+Documents:
 
 ```perl
 my $documents = $client->Documents();
 
-# List documents
-my $result = $documents->List('collection', { offset => 0, limit => 10 });
-
-# Get document
-$result = $documents->Get('collection', 'doc_id');
-
-# Add document
-$result = $documents->Add('collection', $document);
-
-# Update document
-$result = $documents->Update('collection', 'doc_id', $document);
-
-# Delete document
-$result = $documents->Delete('collection', 'doc_id');
-
-# Bulk import
-$result = $documents->ImportDocuments('collection', [$doc1, $doc2, $doc3]);
-```
-
-#### Convenience Methods
-
-```perl
-# List documents
-my $docs = $client->ListDocuments('collection', { offset => 0, limit => 10 });
-
-# Get document
-my $doc = $client->GetDocument('collection', 'doc_id');
-```
-
-### Search API
-
-#### Using the Search API Object
-
-```perl
-my $search = $client->SearchAPI();
-
-# Simple search
-my $results = $search->Search('collection', {
-    q => 'search query',
-    query_by => 'title,content',
-    limit => 10
+my $add = $documents->Add('music', {
+    id => 'track_1',
+    title => 'Like a Prayer',
+    artist => 'Madonna',
 });
 
-# Multi-search
-$results = $search->MultiSearch([
-    { collection => 'col1', q => 'query1' },
-    { collection => 'col2', q => 'query2' }
-]);
+my $list = $client->ListDocuments('music', { offset => 0, limit => 10 });
+my $doc = $client->GetDocument('music', 'track_1');
+```
 
-# Vector search (POST body)
-my $vector_results = $search->VectorSearch('collection', {
-    body => {
-        vector => [0.1, 0.2, 0.3],
-        field_name => 'embedding',
-        topk => 5,
-        include_distance => JSON::true,
-        query_params => { ef => 128, nprobe => 8, is_linear => JSON::true }
-    }
+Search:
+
+```perl
+my $results = $client->Search('music', {
+    q => 'madonna',
+    query_by => 'title,artist',
+    limit => 10,
 });
 ```
 
-#### Convenience Method
+## SAM
+
+`hlquery` also exposes the Secondary Assistant Manager (`SAM`) endpoints:
+
+- `GET /sam/search`
+- `GET /sam/status`
+- `GET /sam/history`
+
+If your Perl client build exposes a raw request helper such as
+`ExecuteRequest`, you can call those routes directly:
 
 ```perl
-# Search documents
-my $results = $client->Search('collection', {
-    q => 'search query',
-    query_by => 'title,content',
-    limit => 10
+my $sam = $client->ExecuteRequest('GET', '/sam/search', undef, {
+    collection => 'music',
+    q => 'queen of pop',
+    limit => 10,
+});
+
+my $status = $client->ExecuteRequest('GET', '/sam/status', undef, {
+    collection => 'music',
+});
+
+my $history = $client->ExecuteRequest('GET', '/sam/history', undef, {
+    collection => 'music',
+    limit => 5,
 });
 ```
 
-### Search Parameters
+SAM search now accepts SQL-style wildcard intent in `q` as well:
 
-The `Search()` method accepts flexible parameters:
-
-#### Query String (`q`)
-The `q` parameter supports the current lexical query syntax:
-- **FIELD**: `q => 'title:laptop'`
-- **NOT**: `q => 'title:laptop NOT title:refurbished'` or `q => 'NOT apple'`
-- **Boolean**: `q => 'title:laptop OR title:notebook'`
-- **WILDCARD**: `q => 'laptop*'`, `q => '*laptop'`, `q => 'lap*top'`
-- **Phrase**: `q => '"exact phrase"'`
-
-Use `filter_by` for field filters and numeric comparisons, for example:
-- `filter_by => 'price:>100&&category:electronics'`
-- `filter_by => 'category:food||category:nature'`
-
-#### Other Parameters
-- `query_by` - Fields to search in (comma-separated string or array reference)
-- `query` - Structured query object
-
-#### Pagination
-- `from` / `offset` - Starting offset
-- `size` / `limit` - Number of results
-- `page` - Page number (alternative to offset)
-- `per_page` - Results per page
-
-#### Filtering & Sorting
-- `filter_by` - Filter conditions (string)
-- `filter` - Filter object
-- `sort_by` - Sort fields (string or array reference)
-- `sort` - Sort specification
-
-#### Faceting
-- `facet_by` - Facet fields (string or array reference)
-- `facets` - Facet specification
-
-### API Aliases
-
-#### `Indices($params)`
-Alias for `ListCollections()`.
-
-```perl
-my $collections = $client->Indices({ offset => 0, limit => 10 });
-```
-
-#### `Get($params)`
-Alias for `GetCollection()` or `GetDocument()`.
-
-```perl
-# Get document
-my $doc = $client->Get({ index => 'collection', id => 'doc_id' });
-
-# Get collection
-my $collection = $client->Get({ index => 'collection' });
-```
-
-#### `Cat($type, $params)`
-Cat API for listing collections and system information.
-
-```perl
-my $indices = $client->Cat('indices', { limit => 10 });
-```
-
-## Response Handling
-
-All methods return a `Hlquery::Response` object:
-
-```perl
-my $response = $client->Health();
-
-# Check status
-if ($response->IsSuccess()) {
-    # Handle success
-    my $body = $response->GetBody();
-}
-
-# Or check status code
-if ($response->GetStatusCode() == 200) {
-    # Handle success
-}
-
-# Get error
-if ($response->IsError()) {
-    my $error = $response->GetError();
-    print "Error: $error\n";
-}
-
-# Convert to hash (for backward compatibility)
-my $hash = $response->ToHash();
-# Returns: { status => 200, body => {...} }
-```
+- `%madonna%` for contains-style matching
+- `madonna%` for prefix-style matching
+- `%queen_` where `_` matches a single character
 
 ## Examples
 
-### Complete Example
-
-See `example.pl` for a complete example demonstrating:
-- Health checks
-- Authentication (with and without token)
-- Listing collections
-- Getting collection fields
-- Listing documents with pagination
-- Multiple search methods
-- Dynamic authentication
-
-Run the example:
+Run the all-in-one example:
 
 ```bash
-# Without authentication
 perl example.pl
-
-# With authentication
-perl example.pl your_token_here
+perl example.pl status
+perl example.pl cols 0 10
+perl example.pl docs music
 ```
 
-### Organized Examples
+Run the focused examples:
 
-Check the `examples/` directory for organized examples:
-- `basic_usage.pl` - Basic operations
-- `search.pl` - Search patterns
-- `collections.pl` - Collection management
-- `documents.pl` - Document CRUD
+```bash
+perl examples/basic_usage.pl
+perl examples/collections.pl
+perl examples/documents.pl
+perl examples/search.pl
+perl examples/flush.pl
+```
 
+## Notes
 
-## Requirements
+- Base URL defaults to `http://localhost:9200`.
+- Examples also check `HLQ_BASE_URL` and `HLQUERY_BASE_URL`.
+- Use canonical module names such as `Hlquery::Client`.
+- Lowercase file-based imports like `Hlquery::client` should not be used.
 
-- Perl >= 5.10
-- LWP::UserAgent - For HTTP requests
-- JSON - For JSON encoding/decoding
-- URI - For URL handling
-- URI::Escape - For URL encoding
-- Digest::MD5 - For token generation
+## License
+
+BSD 3-Clause. See [LICENSE](./LICENSE).
