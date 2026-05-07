@@ -23,9 +23,7 @@ The Perl API directory contains the hlquery Perl client resources, packaging met
 
 ### Why choose it over raw HTTP?
 
-- Less repetitive request and JSON glue code.
-- Cleaner client entry point for common tasks.
-- Still flexible enough to hit raw SAM or module routes directly.
+Choose the Perl client over raw HTTP when you want less repetitive request and JSON glue code, a cleaner client entry point for common tasks, and enough flexibility to hit raw SAM or module routes directly.
 
 ### Install
 
