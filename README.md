@@ -112,19 +112,23 @@ my $module_response = $client->ExecuteRequest('GET', '/modules/<name>/<route>', 
 });
 ```
 
-### Examples
+### Contributing
 
-```bash
-perl example.pl
-perl examples/basic_usage.pl
-perl examples/collections.pl
-perl examples/documents.pl
-perl examples/search.pl
-perl examples/flush.pl
-```
+We welcome contributions from the community! All contributions must be released under the BSD 3-Clause license.
 
-### Notes
+### How to Contribute
 
-- Base URL defaults to `http://localhost:9200`.
-- Examples also check `HLQ_BASE_URL` and `HLQUERY_BASE_URL`.
-- Use canonical module names such as `Hlquery::Client`.
+- Check existing [issues](https://github.com/hlquery/hlquery/issues) or create new ones
+- Contribute to client libraries (Node.js, Go, Java, Python, PHP, Ruby, Rust, Perl, C++)
+- Test and report bugs
+- Improve documentation
+
+### Community
+
+- 📖 [Documentation](https://docs.hlquery.com)
+- 🐦 [X (Twitter)](https://x.com/hlquery)
+- 📦 [GitHub](https://github.com/hlquery/hlquery)
+
+### License
+
+hlquery is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
