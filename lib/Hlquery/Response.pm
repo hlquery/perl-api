@@ -1,0 +1,30 @@
+package Hlquery::Response;
+
+use strict;
+use warnings;
+
+sub new
+{
+    my ($class, %args) = @_;
+    return bless {
+        status_code => $args{status_code} // 0,
+        body        => $args{body},
+        raw_body    => $args{raw_body},
+        headers     => $args{headers} || {},
+        error       => $args{error},
+    }, $class;
+}
+
+sub GetStatusCode { return $_[0]->{status_code}; }
+sub GetBody       { return $_[0]->{body}; }
+sub GetRawBody    { return $_[0]->{raw_body}; }
+sub GetHeaders    { return $_[0]->{headers}; }
+sub GetError      { return $_[0]->{error}; }
+
+sub IsSuccess
+{
+    my ($self) = @_;
+    return $self->{status_code} >= 200 && $self->{status_code} < 300;
+}
+
+1;

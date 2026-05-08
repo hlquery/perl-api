@@ -17,9 +17,7 @@ The Perl API directory contains the hlquery Perl client resources, packaging met
 
 ### Why use it?
 
-- Faster path to collections, documents, search, and admin endpoints.
-- Shared auth and request behavior instead of repeating transport code.
-- Direct access to examples and packaging files in one place.
+Use the Perl API when you want hlquery integration to feel like part of your application instead of a stack of hand-written `LWP::UserAgent` calls and JSON handling. It cuts down repetitive transport code, keeps authentication and request behavior consistent, and gives you a cleaner path into collections, documents, search, and admin operations from normal Perl code.
 
 ### Why choose it over raw HTTP?
 
