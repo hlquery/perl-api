@@ -4,7 +4,7 @@
 
 <div align="center">
 
-**Perl client resources for hlquery, designed around the same practical API coverage as the other official clients.**
+**Perl client resources for hlquery, designed with a familiar and intuitive API structure.**
 
 [![GitHub](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
@@ -28,13 +28,13 @@ Choose the Perl client over raw HTTP when you want less repetitive request and J
 Install dependencies:
 
 ```bash
-cpanm --installdeps .
+$ cpanm --installdeps .
 ```
 
 Or install the runtime modules directly:
 
 ```bash
-cpanm LWP::UserAgent JSON JSON::MaybeXS URI URI::Escape Digest::MD5 Mojolicious Promises
+$ cpanm LWP::UserAgent JSON JSON::MaybeXS URI URI::Escape Digest::MD5 Mojolicious Promises
 ```
 
 When loading from a local checkout:
