@@ -79,25 +79,28 @@ $client->SetAuthToken('your_api_key_here', 'api-key');
 
 ### SAM
 
-Call SAM endpoints through the raw request helper:
-
 SAM is separate from vector search. It performs term and intent-style lookup, not vector similarity search.
 
 ```perl
-my $status = $client->ExecuteRequest('GET', '/sam/status', undef, {
-    collection => 'music',
-});
+my $sam = $client->SAM();
 
-my $history = $client->ExecuteRequest('GET', '/sam/history', undef, {
-    collection => 'music',
-    limit => 5,
-});
+my $status = $sam->Status('music');
+my $history = $sam->History('music', 5);
+my $results = $sam->Search('music', 'queen of pop', { limit => 10 });
+```
 
-my $results = $client->ExecuteRequest('GET', '/sam/search', undef, {
-    collection => 'music',
-    q => 'queen of pop',
-    limit => 10,
-});
+### SQL
+
+```perl
+my $sql = $client->SQL();
+
+my $rows = $sql->Query('SHOW COLLECTIONS;');
+my $exec = $sql->Exec("INSERT INTO logs_archive (id, title) VALUES ('row-1', 'warm cache');");
+
+my $products = $sql->Search('products',
+    'SELECT id, title FROM products ORDER BY id DESC LIMIT 3;',
+    { highlight => 0 }
+);
 ```
 
 ### Reduce Text Example

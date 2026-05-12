@@ -44,6 +44,8 @@ sub SetAuthToken
 sub Collections { return bless { client => $_[0] }, 'Hlquery::Client::Collections'; }
 sub Documents   { return bless { client => $_[0] }, 'Hlquery::Client::Documents'; }
 sub SearchAPI   { return bless { client => $_[0] }, 'Hlquery::Client::SearchAPI'; }
+sub SAM         { return bless { client => $_[0] }, 'Hlquery::Client::SAM'; }
+sub SQL         { return bless { client => $_[0] }, 'Hlquery::Client::SQL'; }
 
 sub Info   { return $_[0]->ExecuteRequest('GET', '/'); }
 sub Health { return $_[0]->ExecuteRequest('GET', '/health'); }
@@ -116,6 +118,42 @@ sub Search
         undef,
         \%normalized,
     );
+}
+
+sub SqlSearch
+{
+    my ($self, $collection_name, $sql, $params) = @_;
+    $params ||= {};
+    $sql ||= '';
+
+    my %normalized = %{$params};
+    $normalized{sql} = $sql;
+
+    return $self->ExecuteRequest(
+        'GET',
+        '/collections/' . _url_encode($collection_name) . '/documents/search',
+        undef,
+        \%normalized,
+    );
+}
+
+sub Sql
+{
+    my ($self, $sql, $params) = @_;
+    $params ||= {};
+    $sql ||= '';
+
+    my %normalized = %{$params};
+    $normalized{sql} = $sql;
+
+    return $self->ExecuteRequest('GET', '/sql', undef, \%normalized);
+}
+
+sub ExecSql
+{
+    my ($self, $sql) = @_;
+    $sql ||= '';
+    return $self->ExecuteRequest('POST', '/sql', { exec => $sql });
 }
 
 sub ExecuteRequest
@@ -291,6 +329,90 @@ sub MultiSearch
     return $self->{client}->ExecuteRequest('POST', '/multi_search', {
         searches => $searches || [],
     });
+}
+
+package Hlquery::Client::SAM;
+
+use strict;
+use warnings;
+
+sub Status
+{
+    my ($self, $collection) = @_;
+    my %query;
+    $query{collection} = $collection if defined $collection && $collection ne '';
+    return $self->{client}->ExecuteRequest('GET', '/sam/status', undef, \%query);
+}
+
+sub History
+{
+    my ($self, $collection, $limit) = @_;
+    my %query;
+    $query{collection} = $collection if defined $collection && $collection ne '';
+    $query{limit} = $limit if defined $limit;
+    return $self->{client}->ExecuteRequest('GET', '/sam/history', undef, \%query);
+}
+
+sub Search
+{
+    my ($self, $collection, $q, $params) = @_;
+    $params ||= {};
+    $q ||= '';
+
+    my %query = %{$params};
+    $query{collection} = $collection if defined $collection && $collection ne '';
+    $query{q} = $q;
+
+    return $self->{client}->ExecuteRequest('GET', '/sam/search', undef, \%query);
+}
+
+sub Rebuild
+{
+    my ($self, $collection) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/sam/rebuild', {
+        collection => $collection,
+    });
+}
+
+sub Documents
+{
+    my ($self, $collection, $limit, $offset) = @_;
+    my %query;
+    $query{collection} = $collection if defined $collection && $collection ne '';
+    $query{limit} = $limit if defined $limit;
+    $query{offset} = $offset if defined $offset;
+    return $self->{client}->ExecuteRequest('GET', '/sam/documents', undef, \%query);
+}
+
+sub Document
+{
+    my ($self, $collection, $document_id) = @_;
+    my %query;
+    $query{collection} = $collection if defined $collection && $collection ne '';
+    return $self->{client}->ExecuteRequest('GET', '/sam/documents/' . Hlquery::Client::_url_encode($document_id), undef, \%query);
+}
+
+package Hlquery::Client::SQL;
+
+use strict;
+use warnings;
+
+sub Query
+{
+    my ($self, $sql, $params) = @_;
+    return $self->{client}->Sql($sql, $params);
+}
+
+sub Exec
+{
+    my ($self, $sql) = @_;
+    return $self->{client}->ExecSql($sql);
+}
+
+sub Search
+{
+    my ($self, $collection_name, $sql, $params) = @_;
+    return $self->{client}->SqlSearch($collection_name, $sql, $params);
 }
 
 1;
