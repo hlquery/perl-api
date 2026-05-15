@@ -6,7 +6,10 @@
 
 **Perl client resources for hlquery, designed with a familiar and intuitive API structure.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery)
+[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white)](https://x.com/hlquery)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/hlquery/perl-api)](https://github.com/hlquery/perl-api/pulse)
+[![GitHub](https://img.shields.io/badge/GitHub-perl--api-181717?logo=github&logoColor=white)](https://github.com/hlquery/perl-api/stargazers)
+[![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white)](https://github.com/hlquery/hlquery/stargazers)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 </div>
@@ -18,10 +21,6 @@ The Perl API directory contains the hlquery Perl client resources, packaging met
 ### Why use it?
 
 Use the Perl API when you want hlquery integration to feel like part of your application instead of a stack of hand-written `LWP::UserAgent` calls and JSON handling. It cuts down repetitive transport code, keeps authentication and request behavior consistent, and gives you a cleaner path into collections, documents, search, and admin operations from normal Perl code.
-
-### Why choose it over raw HTTP?
-
-Choose the Perl client over raw HTTP when you want less repetitive request and JSON glue code, a cleaner client entry point for common tasks, and enough flexibility to hit raw SAM or module routes directly.
 
 ### Install
 
