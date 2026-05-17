@@ -16,7 +16,7 @@
 
 ### What is the hlquery Perl API?
 
-The Perl API directory contains the hlquery Perl client resources, packaging metadata, runnable examples, and usage notes. It is the Perl entry point for talking to hlquery without building raw HTTP requests around `LWP::UserAgent` by hand.
+The Perl API directory contains the [hlquery](https://github.com/hlquery/hlquery) Perl client resources, packaging metadata, runnable examples, and usage notes. It is the Perl entry point for talking to hlquery without building raw HTTP requests around `LWP::UserAgent` by hand.
 
 ### Why use it?
 
