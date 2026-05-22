@@ -41,16 +41,66 @@ sub SetAuthToken
     return $self;
 }
 
+sub ClearAuth
+{
+    my ($self) = @_;
+    $self->{token} = undef;
+    return $self;
+}
+
 sub Collections { return bless { client => $_[0] }, 'Hlquery::Client::Collections'; }
 sub Documents   { return bless { client => $_[0] }, 'Hlquery::Client::Documents'; }
 sub SearchAPI   { return bless { client => $_[0] }, 'Hlquery::Client::SearchAPI'; }
 sub SAM         { return bless { client => $_[0] }, 'Hlquery::Client::SAM'; }
 sub SQL         { return bless { client => $_[0] }, 'Hlquery::Client::SQL'; }
+sub Keys        { return bless { client => $_[0] }, 'Hlquery::Client::Keys'; }
+sub Synonyms    { return bless { client => $_[0] }, 'Hlquery::Client::Synonyms'; }
+sub Stopwords   { return bless { client => $_[0] }, 'Hlquery::Client::Stopwords'; }
+sub Overrides   { return bless { client => $_[0] }, 'Hlquery::Client::Overrides'; }
+sub Aliases     { return bless { client => $_[0] }, 'Hlquery::Client::Aliases'; }
+sub Users       { return bless { client => $_[0] }, 'Hlquery::Client::Users'; }
+sub Links       { return bless { client => $_[0] }, 'Hlquery::Client::Links'; }
+sub Modules     { return bless { client => $_[0] }, 'Hlquery::Client::Modules'; }
+sub Analytics   { return bless { client => $_[0] }, 'Hlquery::Client::Analytics'; }
 
 sub Info   { return $_[0]->ExecuteRequest('GET', '/'); }
 sub Health { return $_[0]->ExecuteRequest('GET', '/health'); }
 sub Stats  { return $_[0]->ExecuteRequest('GET', '/stats'); }
 sub Flush  { return $_[0]->ExecuteRequest('POST', '/flush'); }
+sub Status { return $_[0]->ExecuteRequest('GET', '/status'); }
+sub Query  { return $_[0]->ExecuteRequest('GET', '/query'); }
+sub Ready  { return $_[0]->ExecuteRequest('GET', '/ready'); }
+sub Ping   { return $_[0]->ExecuteRequest('GET', '/ping'); }
+sub Metrics { return $_[0]->ExecuteRequest('GET', '/metrics'); }
+sub MetricsJson { return $_[0]->ExecuteRequest('GET', '/metrics.json'); }
+sub MetricsHistory { return $_[0]->ExecuteRequest('GET', '/metrics/history'); }
+sub Connections { return $_[0]->ExecuteRequest('GET', '/connections'); }
+sub RocksDB { return $_[0]->ExecuteRequest('GET', '/rocksdb'); }
+sub RocksDBInternal { return $_[0]->ExecuteRequest('GET', '/_rocksdb'); }
+sub DocTotal { return $_[0]->ExecuteRequest('GET', '/doctotal'); }
+sub SearchConfig { return $_[0]->ExecuteRequest('GET', '/search-config'); }
+sub Startup { return $_[0]->ExecuteRequest('GET', '/startup'); }
+sub BootStatus { return $_[0]->ExecuteRequest('GET', '/boot-status'); }
+sub LLM { return $_[0]->ExecuteRequest('GET', '/llm'); }
+sub Integrity { return $_[0]->ExecuteRequest('GET', '/integrity'); }
+sub Consistency { return $_[0]->ExecuteRequest('GET', '/consistency'); }
+sub SelfCheck { return $_[0]->ExecuteRequest('GET', '/self-check'); }
+sub StorageStatus { return $_[0]->ExecuteRequest('GET', '/admin/storage_status'); }
+sub Etc { return $_[0]->ExecuteRequest('GET', '/etc'); }
+
+sub Repair
+{
+    my ($self, $payload, $params) = @_;
+    return $self->ExecuteRequest(defined $payload ? 'POST' : 'GET', '/repair', $payload, $params || {});
+}
+
+sub UpdateCounters
+{
+    my ($self, $payload, $params) = @_;
+    return $self->ExecuteRequest(defined $payload ? 'POST' : 'GET', '/update-counters', $payload, $params || {});
+}
+
+sub DebugCounters { return $_[0]->ExecuteRequest('GET', '/debug/counters'); }
 
 sub ListCollections
 {
@@ -89,6 +139,17 @@ sub ListDocuments
         '/collections/' . _url_encode($collection_name) . '/documents',
         undef,
         $params,
+    );
+}
+
+sub GetDocumentContext
+{
+    my ($self, $collection_name, $document_id, $params) = @_;
+    return $self->ExecuteRequest(
+        'GET',
+        '/collections/' . _url_encode($collection_name) . '/documents/' . _url_encode($document_id) . '/context',
+        undef,
+        $params || {},
     );
 }
 
@@ -147,6 +208,16 @@ sub Sql
     $normalized{sql} = $sql;
 
     return $self->ExecuteRequest('GET', '/sql', undef, \%normalized);
+}
+
+sub GlobalSearch
+{
+    my ($self, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    return $method eq 'POST'
+        ? $self->ExecuteRequest('POST', '/search', $params)
+        : $self->ExecuteRequest('GET', '/search', undef, $params);
 }
 
 sub ExecSql
@@ -265,6 +336,12 @@ sub _url_encode
     return uri_escape($value);
 }
 
+sub _collection_path
+{
+    my ($collection_name, @segments) = @_;
+    return join('', '/collections/', _url_encode($collection_name), map { '/' . _url_encode($_) } @segments);
+}
+
 package Hlquery::Client::Collections;
 
 use strict;
@@ -282,6 +359,64 @@ sub Delete
 {
     my ($self, $name) = @_;
     return $self->{client}->ExecuteRequest('DELETE', '/collections/' . Hlquery::Client::_url_encode($name));
+}
+
+sub List
+{
+    my ($self, $offset, $limit) = @_;
+    return $self->{client}->ListCollections($offset, $limit);
+}
+
+sub Get
+{
+    my ($self, $name) = @_;
+    return $self->{client}->GetCollection($name);
+}
+
+sub GetFields
+{
+    my ($self, $name) = @_;
+    return $self->{client}->GetCollectionFields($name);
+}
+
+sub Language
+{
+    my ($self, $name) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($name, 'lang'));
+}
+
+sub Distributed
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/collections/distributed', undef, $params || {});
+}
+
+sub Update
+{
+    my ($self, $name, $schema) = @_;
+    return $self->{client}->UpdateCollection($name, $schema || {});
+}
+
+sub VectorSearch
+{
+    my ($self, $name, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    my $path = Hlquery::Client::_collection_path($name, 'vector_search');
+    return $method eq 'POST'
+        ? $self->{client}->ExecuteRequest('POST', $path, $params)
+        : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
+}
+
+sub SearchAlias
+{
+    my ($self, $name, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    my $path = Hlquery::Client::_collection_path($name, 'search');
+    return $method eq 'POST'
+        ? $self->{client}->ExecuteRequest('POST', $path, $params)
+        : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
 }
 
 package Hlquery::Client::Documents;
@@ -318,6 +453,140 @@ sub Delete
     );
 }
 
+sub List
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ListDocuments($collection_name, $params || {});
+}
+
+sub Get
+{
+    my ($self, $collection_name, $document_id) = @_;
+    return $self->{client}->GetDocument($collection_name, $document_id);
+}
+
+sub Import
+{
+    my ($self, $collection_name, $documents, $params) = @_;
+    return $self->{client}->ExecuteRequest(
+        'POST',
+        Hlquery::Client::_collection_path($collection_name, 'documents', 'import'),
+        { documents => $documents || [] },
+        $params || {},
+    );
+}
+
+sub DeleteByFilter
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ExecuteRequest(
+        'DELETE',
+        Hlquery::Client::_collection_path($collection_name, 'documents'),
+        undef,
+        $params || {},
+    );
+}
+
+sub Search
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->Search($collection_name, $params || {});
+}
+
+sub SearchPost
+{
+    my ($self, $collection_name, $payload) = @_;
+    return $self->{client}->ExecuteRequest(
+        'POST',
+        Hlquery::Client::_collection_path($collection_name, 'documents', 'search'),
+        $payload || {},
+    );
+}
+
+sub Context
+{
+    my ($self, $collection_name, $document_id, $params) = @_;
+    return $self->{client}->GetDocumentContext($collection_name, $document_id, $params || {});
+}
+
+sub UpdateByQuery
+{
+    my ($self, $collection_name, $payload) = @_;
+    return $self->{client}->ExecuteRequest(
+        'POST',
+        Hlquery::Client::_collection_path($collection_name, 'documents', '_update_by_query'),
+        $payload || {},
+    );
+}
+
+sub DeleteByQuery
+{
+    my ($self, $collection_name, $payload) = @_;
+    return $self->{client}->ExecuteRequest(
+        'POST',
+        Hlquery::Client::_collection_path($collection_name, 'documents', '_delete_by_query'),
+        $payload || {},
+    );
+}
+
+sub Facets
+{
+    my ($self, $collection_name, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    my $path = Hlquery::Client::_collection_path($collection_name, 'documents', 'facet_counts');
+    return $method eq 'POST'
+        ? $self->{client}->ExecuteRequest('POST', $path, $params)
+        : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
+}
+
+sub Export
+{
+    my ($self, $collection_name, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    my $path = Hlquery::Client::_collection_path($collection_name, 'documents', 'export');
+    return $method eq 'POST'
+        ? $self->{client}->ExecuteRequest('POST', $path, $params)
+        : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
+}
+
+sub Maybe
+{
+    my ($self, $collection_name, $params, $method) = @_;
+    $params ||= {};
+    $method = uc($method || 'GET');
+    my $path = Hlquery::Client::_collection_path($collection_name, 'documents', 'maybe');
+    return $method eq 'POST'
+        ? $self->{client}->ExecuteRequest('POST', $path, $params)
+        : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
+}
+
+sub Recent
+{
+    my ($self, $collection_name, $limit, $offset) = @_;
+    $limit = 20 if !defined $limit;
+    $offset = 0 if !defined $offset;
+    my $sql = 'select * from ' . $collection_name . ' order by timestamp desc limit ' . int($limit) . ' offset ' . int($offset);
+    return $self->{client}->SqlSearch($collection_name, $sql);
+}
+
+sub Copy
+{
+    my ($self, $collection_name, $source_id, $target_id) = @_;
+    my $source_response = $self->Get($collection_name, $source_id);
+    return $source_response if !$source_response->IsSuccess();
+
+    my $doc = $source_response->GetBody();
+    return $source_response if ref($doc) ne 'HASH';
+
+    delete $doc->{collection_id};
+    delete $doc->{score};
+    $doc->{id} = $target_id;
+
+    return $self->Import($collection_name, [$doc]);
+}
+
 package Hlquery::Client::SearchAPI;
 
 use strict;
@@ -329,6 +598,18 @@ sub MultiSearch
     return $self->{client}->ExecuteRequest('POST', '/multi_search', {
         searches => $searches || [],
     });
+}
+
+sub GlobalSearch
+{
+    my ($self, $params, $method) = @_;
+    return $self->{client}->GlobalSearch($params || {}, $method || 'GET');
+}
+
+sub VectorSearch
+{
+    my ($self, $collection_name, $params, $method) = @_;
+    return $self->{client}->Collections()->VectorSearch($collection_name, $params || {}, $method || 'GET');
 }
 
 package Hlquery::Client::SAM;
@@ -368,10 +649,48 @@ sub Search
 
 sub Rebuild
 {
-    my ($self, $collection) = @_;
-    return $self->{client}->ExecuteRequest('POST', '/sam/rebuild', {
-        collection => $collection,
-    });
+    my ($self, $collection, $params) = @_;
+    $params ||= {};
+    $params->{collection} = $collection if defined $collection && $collection ne '';
+    return $self->{client}->ExecuteRequest('POST', '/sam/rebuild', undef, $params);
+}
+
+sub Debug
+{
+    my ($self, $collection, $params) = @_;
+    $params ||= {};
+    $params->{collection} = $collection if defined $collection && $collection ne '';
+    return $self->{client}->ExecuteRequest('GET', '/sam/debug', undef, $params);
+}
+
+sub Pause
+{
+    my ($self, $pause, $params) = @_;
+    $params ||= {};
+    if (!defined $pause)
+    {
+        $pause = int(time() * 1000) + 300000;
+    }
+    elsif ($pause eq '1' || $pause eq 'true')
+    {
+        $pause = int(time() * 1000) + 300000;
+    }
+    $params->{pause} = $pause;
+    return $self->{client}->ExecuteRequest('POST', '/sam/pause', undef, $params);
+}
+
+sub Improve
+{
+    my ($self, $collection, $params) = @_;
+    $params ||= {};
+    $params->{collection} = $collection if defined $collection && $collection ne '';
+    return $self->{client}->ExecuteRequest('POST', '/sam/improve', undef, $params);
+}
+
+sub FlushActorMetadata
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/sam/flush_actor_metadata', undef, $params || {});
 }
 
 sub Documents
@@ -387,9 +706,23 @@ sub Documents
 sub Document
 {
     my ($self, $collection, $document_id) = @_;
-    my %query;
-    $query{collection} = $collection if defined $collection && $collection ne '';
-    return $self->{client}->ExecuteRequest('GET', '/sam/documents/' . Hlquery::Client::_url_encode($document_id), undef, \%query);
+    return $self->{client}->ExecuteRequest(
+        'GET',
+        '/sam/documents/' . Hlquery::Client::_url_encode($collection) . '/' . Hlquery::Client::_url_encode($document_id),
+    );
+}
+
+sub AddDocumentLabel
+{
+    my ($self, $collection, $document_id, $label, $params) = @_;
+    $params ||= {};
+    my $payload = ref($label) eq 'ARRAY' ? { labels => $label } : { label => $label };
+    return $self->{client}->ExecuteRequest(
+        'POST',
+        '/sam/label/add/' . Hlquery::Client::_url_encode($collection) . '/' . Hlquery::Client::_url_encode($document_id),
+        $payload,
+        $params,
+    );
 }
 
 package Hlquery::Client::SQL;
@@ -413,6 +746,350 @@ sub Search
 {
     my ($self, $collection_name, $sql, $params) = @_;
     return $self->{client}->SqlSearch($collection_name, $sql, $params);
+}
+
+package Hlquery::Client::Keys;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $offset, $limit) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/keys', undef, {
+        offset => defined $offset ? $offset : 0,
+        limit  => defined $limit ? $limit : 100,
+    });
+}
+
+sub Create
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/keys', $payload || {});
+}
+
+sub Get
+{
+    my ($self, $key_id) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/keys/' . Hlquery::Client::_url_encode($key_id));
+}
+
+sub Update
+{
+    my ($self, $key_id, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', '/keys/' . Hlquery::Client::_url_encode($key_id), $payload || {});
+}
+
+sub Delete
+{
+    my ($self, $key_id) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', '/keys/' . Hlquery::Client::_url_encode($key_id));
+}
+
+package Hlquery::Client::Synonyms;
+
+use strict;
+use warnings;
+
+sub ListAll
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/synonyms', undef, $params || {});
+}
+
+sub List
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'synonyms'), undef, $params || {});
+}
+
+sub Upsert
+{
+    my ($self, $collection_name, $term, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', Hlquery::Client::_collection_path($collection_name, 'synonyms', $term), $payload || {});
+}
+
+sub Create { return shift->Upsert(@_); }
+sub Update { return shift->Upsert(@_); }
+
+sub Get
+{
+    my ($self, $collection_name, $term) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'synonyms', $term));
+}
+
+sub Delete
+{
+    my ($self, $collection_name, $term) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', Hlquery::Client::_collection_path($collection_name, 'synonyms', $term));
+}
+
+sub ListGlobal
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/synonyms/global', undef, $params || {});
+}
+
+sub UpsertGlobal
+{
+    my ($self, $term, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', '/synonyms/global/' . Hlquery::Client::_url_encode($term), $payload || {});
+}
+
+sub CreateGlobal { return shift->UpsertGlobal(@_); }
+sub UpdateGlobal { return shift->UpsertGlobal(@_); }
+
+sub GetGlobal
+{
+    my ($self, $term) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/synonyms/global/' . Hlquery::Client::_url_encode($term));
+}
+
+sub DeleteGlobal
+{
+    my ($self, $term) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', '/synonyms/global/' . Hlquery::Client::_url_encode($term));
+}
+
+package Hlquery::Client::Stopwords;
+
+use strict;
+use warnings;
+
+sub ListAll
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/stopwords', undef, $params || {});
+}
+
+sub ListGlobal
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/stopwords/global', undef, $params || {});
+}
+
+sub CreateGlobal
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/stopwords/global', $payload || {});
+}
+
+sub DeleteGlobal
+{
+    my ($self, $term) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', '/stopwords/global/' . Hlquery::Client::_url_encode($term));
+}
+
+sub List
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'stopwords'), undef, $params || {});
+}
+
+sub Create
+{
+    my ($self, $collection_name, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', Hlquery::Client::_collection_path($collection_name, 'stopwords'), $payload || {});
+}
+
+sub Delete
+{
+    my ($self, $collection_name, $term) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', Hlquery::Client::_collection_path($collection_name, 'stopwords', $term));
+}
+
+package Hlquery::Client::Overrides;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'overrides'), undef, $params || {});
+}
+
+sub Upsert
+{
+    my ($self, $collection_name, $override_id, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id), $payload || {});
+}
+
+sub Create { return shift->Upsert(@_); }
+sub Update { return shift->Upsert(@_); }
+
+sub Get
+{
+    my ($self, $collection_name, $override_id) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id));
+}
+
+sub Delete
+{
+    my ($self, $collection_name, $override_id) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id));
+}
+
+package Hlquery::Client::Aliases;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/aliases', undef, $params || {});
+}
+
+sub ListForCollection
+{
+    my ($self, $collection_name, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', Hlquery::Client::_collection_path($collection_name, 'aliases'), undef, $params || {});
+}
+
+sub Upsert
+{
+    my ($self, $alias, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', '/aliases/' . Hlquery::Client::_url_encode($alias), $payload || {});
+}
+
+sub Create { return shift->Upsert(@_); }
+sub Update { return shift->Upsert(@_); }
+
+sub Get
+{
+    my ($self, $alias) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/aliases/' . Hlquery::Client::_url_encode($alias));
+}
+
+sub Delete
+{
+    my ($self, $alias) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', '/aliases/' . Hlquery::Client::_url_encode($alias));
+}
+
+package Hlquery::Client::Users;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/users', undef, $params || {});
+}
+
+sub Create
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/users', $payload || {});
+}
+
+sub Get
+{
+    my ($self, $user_id) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/users/' . Hlquery::Client::_url_encode($user_id));
+}
+
+sub Update
+{
+    my ($self, $user_id, $payload) = @_;
+    return $self->{client}->ExecuteRequest('PUT', '/users/' . Hlquery::Client::_url_encode($user_id), $payload || {});
+}
+
+sub Delete
+{
+    my ($self, $user_id) = @_;
+    return $self->{client}->ExecuteRequest('DELETE', '/users/' . Hlquery::Client::_url_encode($user_id));
+}
+
+package Hlquery::Client::Links;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/links', undef, $params || {});
+}
+
+sub Ping
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/links/ping', undef, $params || {});
+}
+
+sub Connect
+{
+    my ($self, $endpoint) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/links/connect', { endpoint => $endpoint });
+}
+
+sub Disconnect
+{
+    my ($self, $endpoint) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/links/disconnect', { endpoint => $endpoint });
+}
+
+package Hlquery::Client::Modules;
+
+use strict;
+use warnings;
+
+sub List
+{
+    my ($self, $params) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/modules', undef, $params || {});
+}
+
+sub Load
+{
+    my ($self, $module) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/loadmodule/' . Hlquery::Client::_url_encode($module));
+}
+
+sub LoadWithPayload
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/loadmodule', $payload || {});
+}
+
+sub Unload
+{
+    my ($self, $module) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/unloadmodule/' . Hlquery::Client::_url_encode($module));
+}
+
+sub UnloadWithPayload
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/unloadmodule', $payload || {});
+}
+
+sub Syntax
+{
+    my ($self, $module) = @_;
+    return $self->{client}->ExecuteRequest('GET', '/modules/' . Hlquery::Client::_url_encode($module) . '/syntax');
+}
+
+sub Request
+{
+    my ($self, $method, $path, $payload, $query) = @_;
+    $path ||= '';
+    $path = '/modules/' . $path if $path !~ m{^/modules/};
+    return $self->{client}->ExecuteRequest($method || 'GET', $path, $payload, $query || {});
+}
+
+package Hlquery::Client::Analytics;
+
+use strict;
+use warnings;
+
+sub Click
+{
+    my ($self, $payload) = @_;
+    return $self->{client}->ExecuteRequest('POST', '/analytics/click', $payload || {});
 }
 
 1;

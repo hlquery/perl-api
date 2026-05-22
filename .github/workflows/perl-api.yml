@@ -1,4 +1,4 @@
-name: Perl API
+name: Perl biuld
 
 on:
   push:
