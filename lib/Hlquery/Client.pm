@@ -51,7 +51,6 @@ sub ClearAuth
 sub Collections { return bless { client => $_[0] }, 'Hlquery::Client::Collections'; }
 sub Documents   { return bless { client => $_[0] }, 'Hlquery::Client::Documents'; }
 sub SearchAPI   { return bless { client => $_[0] }, 'Hlquery::Client::SearchAPI'; }
-sub SAM         { return bless { client => $_[0] }, 'Hlquery::Client::SAM'; }
 sub SQL         { return bless { client => $_[0] }, 'Hlquery::Client::SQL'; }
 sub Keys        { return bless { client => $_[0] }, 'Hlquery::Client::Keys'; }
 sub Synonyms    { return bless { client => $_[0] }, 'Hlquery::Client::Synonyms'; }
@@ -610,119 +609,6 @@ sub VectorSearch
 {
     my ($self, $collection_name, $params, $method) = @_;
     return $self->{client}->Collections()->VectorSearch($collection_name, $params || {}, $method || 'GET');
-}
-
-package Hlquery::Client::SAM;
-
-use strict;
-use warnings;
-
-sub Status
-{
-    my ($self, $collection) = @_;
-    my %query;
-    $query{collection} = $collection if defined $collection && $collection ne '';
-    return $self->{client}->ExecuteRequest('GET', '/sam/status', undef, \%query);
-}
-
-sub History
-{
-    my ($self, $collection, $limit) = @_;
-    my %query;
-    $query{collection} = $collection if defined $collection && $collection ne '';
-    $query{limit} = $limit if defined $limit;
-    return $self->{client}->ExecuteRequest('GET', '/sam/history', undef, \%query);
-}
-
-sub Search
-{
-    my ($self, $collection, $q, $params) = @_;
-    $params ||= {};
-    $q ||= '';
-
-    my %query = %{$params};
-    $query{collection} = $collection if defined $collection && $collection ne '';
-    $query{q} = $q;
-
-    return $self->{client}->ExecuteRequest('GET', '/sam/search', undef, \%query);
-}
-
-sub Rebuild
-{
-    my ($self, $collection, $params) = @_;
-    $params ||= {};
-    $params->{collection} = $collection if defined $collection && $collection ne '';
-    return $self->{client}->ExecuteRequest('POST', '/sam/rebuild', undef, $params);
-}
-
-sub Debug
-{
-    my ($self, $collection, $params) = @_;
-    $params ||= {};
-    $params->{collection} = $collection if defined $collection && $collection ne '';
-    return $self->{client}->ExecuteRequest('GET', '/sam/debug', undef, $params);
-}
-
-sub Pause
-{
-    my ($self, $pause, $params) = @_;
-    $params ||= {};
-    if (!defined $pause)
-    {
-        $pause = int(time() * 1000) + 300000;
-    }
-    elsif ($pause eq '1' || $pause eq 'true')
-    {
-        $pause = int(time() * 1000) + 300000;
-    }
-    $params->{pause} = $pause;
-    return $self->{client}->ExecuteRequest('POST', '/sam/pause', undef, $params);
-}
-
-sub Improve
-{
-    my ($self, $collection, $params) = @_;
-    $params ||= {};
-    $params->{collection} = $collection if defined $collection && $collection ne '';
-    return $self->{client}->ExecuteRequest('POST', '/sam/improve', undef, $params);
-}
-
-sub FlushActorMetadata
-{
-    my ($self, $params) = @_;
-    return $self->{client}->ExecuteRequest('POST', '/sam/flush_actor_metadata', undef, $params || {});
-}
-
-sub Documents
-{
-    my ($self, $collection, $limit, $offset) = @_;
-    my %query;
-    $query{collection} = $collection if defined $collection && $collection ne '';
-    $query{limit} = $limit if defined $limit;
-    $query{offset} = $offset if defined $offset;
-    return $self->{client}->ExecuteRequest('GET', '/sam/documents', undef, \%query);
-}
-
-sub Document
-{
-    my ($self, $collection, $document_id) = @_;
-    return $self->{client}->ExecuteRequest(
-        'GET',
-        '/sam/documents/' . Hlquery::Client::_url_encode($collection) . '/' . Hlquery::Client::_url_encode($document_id),
-    );
-}
-
-sub AddDocumentLabel
-{
-    my ($self, $collection, $document_id, $label, $params) = @_;
-    $params ||= {};
-    my $payload = ref($label) eq 'ARRAY' ? { labels => $label } : { label => $label };
-    return $self->{client}->ExecuteRequest(
-        'POST',
-        '/sam/label/add/' . Hlquery::Client::_url_encode($collection) . '/' . Hlquery::Client::_url_encode($document_id),
-        $payload,
-        $params,
-    );
 }
 
 package Hlquery::Client::SQL;

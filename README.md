@@ -77,18 +77,6 @@ $client->SetAuthToken('your_token_here', 'bearer');
 $client->SetAuthToken('your_api_key_here', 'api-key');
 ```
 
-### SAM
-
-SAM is separate from vector search. It performs term and intent-style lookup, not vector similarity search.
-
-```perl
-my $sam = $client->SAM();
-
-my $status = $sam->Status('music');
-my $history = $sam->History('music', 5);
-my $results = $sam->Search('music', 'queen of pop', { limit => 10 });
-```
-
 ### SQL
 
 ```perl
