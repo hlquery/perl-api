@@ -80,7 +80,6 @@ sub DocTotal { return $_[0]->ExecuteRequest('GET', '/doctotal'); }
 sub SearchConfig { return $_[0]->ExecuteRequest('GET', '/search-config'); }
 sub Startup { return $_[0]->ExecuteRequest('GET', '/startup'); }
 sub BootStatus { return $_[0]->ExecuteRequest('GET', '/boot-status'); }
-sub LLM { return $_[0]->ExecuteRequest('GET', '/llm'); }
 sub Integrity { return $_[0]->ExecuteRequest('GET', '/integrity'); }
 sub Consistency { return $_[0]->ExecuteRequest('GET', '/consistency'); }
 sub SelfCheck { return $_[0]->ExecuteRequest('GET', '/self-check'); }
