@@ -118,7 +118,7 @@ sub GetCollection
 sub GetCollectionFields
 {
     my ($self, $name) = @_;
-    return $self->ExecuteRequest('GET', '/collections/' . _url_encode($name) . '/fields');
+    return $self->GetCollection($name);
 }
 
 sub UpdateCollection
@@ -338,6 +338,14 @@ sub _collection_path
 {
     my ($collection_name, @segments) = @_;
     return join('', '/collections/', _url_encode($collection_name), map { '/' . _url_encode($_) } @segments);
+}
+
+sub _upsert_method
+{
+    my ($method) = @_;
+    $method = uc($method || 'PUT');
+    die "Upsert method must be POST or PUT\n" if $method ne 'POST' && $method ne 'PUT';
+    return $method;
 }
 
 package Hlquery::Client::Collections;
@@ -592,8 +600,10 @@ use warnings;
 
 sub MultiSearch
 {
-    my ($self, $searches) = @_;
-    return $self->{client}->ExecuteRequest('POST', '/multi_search', {
+    my ($self, $searches, $method) = @_;
+    $method = uc($method || 'POST');
+    die "Multi-search method must be GET or POST\n" if $method ne 'GET' && $method ne 'POST';
+    return $self->{client}->ExecuteRequest($method, '/multi_search', {
         searches => $searches || [],
     });
 }
@@ -690,8 +700,8 @@ sub List
 
 sub Upsert
 {
-    my ($self, $collection_name, $term, $payload) = @_;
-    return $self->{client}->ExecuteRequest('PUT', Hlquery::Client::_collection_path($collection_name, 'synonyms', $term), $payload || {});
+    my ($self, $collection_name, $term, $payload, $method) = @_;
+    return $self->{client}->ExecuteRequest(Hlquery::Client::_upsert_method($method), Hlquery::Client::_collection_path($collection_name, 'synonyms', $term), $payload || {});
 }
 
 sub Create { return shift->Upsert(@_); }
@@ -717,8 +727,8 @@ sub ListGlobal
 
 sub UpsertGlobal
 {
-    my ($self, $term, $payload) = @_;
-    return $self->{client}->ExecuteRequest('PUT', '/synonyms/global/' . Hlquery::Client::_url_encode($term), $payload || {});
+    my ($self, $term, $payload, $method) = @_;
+    return $self->{client}->ExecuteRequest(Hlquery::Client::_upsert_method($method), '/synonyms/global/' . Hlquery::Client::_url_encode($term), $payload || {});
 }
 
 sub CreateGlobal { return shift->UpsertGlobal(@_); }
@@ -796,8 +806,8 @@ sub List
 
 sub Upsert
 {
-    my ($self, $collection_name, $override_id, $payload) = @_;
-    return $self->{client}->ExecuteRequest('PUT', Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id), $payload || {});
+    my ($self, $collection_name, $override_id, $payload, $method) = @_;
+    return $self->{client}->ExecuteRequest(Hlquery::Client::_upsert_method($method), Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id), $payload || {});
 }
 
 sub Create { return shift->Upsert(@_); }
@@ -834,8 +844,8 @@ sub ListForCollection
 
 sub Upsert
 {
-    my ($self, $alias, $payload) = @_;
-    return $self->{client}->ExecuteRequest('PUT', '/aliases/' . Hlquery::Client::_url_encode($alias), $payload || {});
+    my ($self, $alias, $payload, $method) = @_;
+    return $self->{client}->ExecuteRequest(Hlquery::Client::_upsert_method($method), '/aliases/' . Hlquery::Client::_url_encode($alias), $payload || {});
 }
 
 sub Create { return shift->Upsert(@_); }
