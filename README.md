@@ -91,6 +91,41 @@ my $products = $sql->Search('products',
 );
 ```
 
+### Current resource API
+
+The client exposes service objects using the method names shown below:
+
+```perl
+my $metadata = $client->Collections()->Get('products');
+my $language = $client->Collections()->Language('products');
+
+# GetFields is retained for compatibility and returns the collection metadata;
+# the server has no /collections/{name}/fields route.
+my $metadata_again = $client->Collections()->GetFields('products');
+
+my $context = $client->Documents()->Context('products', 'prod_1', { window => 3 });
+my $facets = $client->Documents()->Facets('products', { facet_by => 'brand' });
+my $export = $client->Documents()->Export('products', { filter_by => 'active:true' });
+my $maybe = $client->Documents()->Maybe('products', { q => 'keybaord' });
+
+$client->Documents()->UpdateByQuery('products', {
+    filter_by => 'active:false', set => { archived => 1 },
+});
+$client->Documents()->DeleteByQuery('products', { filter_by => 'expired:true' });
+
+my $searches = [{ collection => 'products', q => 'keyboard', query_by => 'title' }];
+$client->SearchAPI()->MultiSearch($searches);        # POST (default)
+$client->SearchAPI()->MultiSearch($searches, 'GET');
+```
+
+`Synonyms()->Upsert`, `Overrides()->Upsert`, and `Aliases()->Upsert` default to `PUT` and accept `POST` or `PUT` as the final argument. The same applies to global synonym upserts. The client also provides `Stopwords`, `Users`, `Keys`, `Links`, `Modules`, and `Analytics` service objects, plus direct wrappers for readiness, metrics, storage, integrity, counters, and repair.
+
+Run the offline route contract with:
+
+```bash
+prove -Ilib t/route_contract.t
+```
+
 ### Reduce Text Example
 
 Use the same raw request path for custom module routes:
