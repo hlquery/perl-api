@@ -42,6 +42,15 @@ sub assert_request
 $client->GetCollectionFields('books and notes');
 assert_request('GET', '/collections/books%20and%20notes', 'collection fields use the core collection route');
 
+$client->Etc();
+assert_request('GET', '/etc', 'etc metadata uses the core /etc route');
+
+$client->Status();
+assert_request('GET', '/status', 'status uses the core /status route');
+
+$client->Query();
+assert_request('GET', '/query', 'query alias uses the core /query route');
+
 $client->SearchAPI()->MultiSearch([], 'GET');
 assert_request('GET', '/multi_search', 'multi-search GET variant');
 
