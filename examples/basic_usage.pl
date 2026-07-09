@@ -23,21 +23,21 @@ my $client = Hlquery::Client->new('http://localhost:9200');
 
 # /* Perform a health check. */
 
-my $health = $client->Health();
+my $health = $client->health;
 
-print "Health Status Code: " . $health->GetStatusCode() . ".\n";
+print "Health Status Code: " . $health->get_status_code . ".\n";
 
 # /* List all collections with pagination. */
 
-my $collections = $client->ListCollections(0, 10);
+my $collections = $client->collections->list(0, 10);
 
-if ($collections->IsSuccess()) 
+if ($collections->is_success) 
 {
-     my $body = $collections->GetBody();
+     my $body = $collections->get_body;
      
      print "Found " . scalar(@{$body->{collections} || []}) . " collections.\n";
 }
 else 
 {
-     print "Failed to list collections: " . $collections->GetError() . ".\n";
+     print "Failed to list collections: " . $collections->get_error . ".\n";
 }

@@ -94,8 +94,8 @@ sub print_result
      
      if (ref($response) && $response->isa('Hlquery::Response')) 
      {
-          my $status = $response->GetStatusCode();
-          my $body = $response->GetBody();
+          my $status = $response->get_status_code;
+          my $body = $response->get_body;
           
           print "Status Code: $status\n";
           
@@ -113,13 +113,13 @@ sub print_result
                }
           }
           
-          if ($response->IsSuccess()) 
+          if ($response->is_success) 
           {
                print "✓ SUCCESS\n";
           } 
           else 
           {
-               print "✗ FAILED: " . ($response->GetError() // 'Unknown error') . "\n";
+               print "✗ FAILED: " . ($response->get_error // 'Unknown error') . "\n";
           }
      } 
      else 
@@ -134,11 +134,11 @@ sub print_result
 sub get_first_collection 
 {
      my ($client) = @_;
-     my $collections = $client->ListCollections(0, 1);
+     my $collections = $client->collections->list(0, 1);
      
-     if ($collections->IsSuccess()) 
+     if ($collections->is_success) 
      {
-          my $body = $collections->GetBody();
+          my $body = $collections->get_body;
           
           if (ref($body) eq 'HASH' && exists $body->{collections} && ref($body->{collections}) eq 'ARRAY' && @{$body->{collections}} > 0) 
           {
@@ -155,7 +155,7 @@ my $client = Hlquery::Client->new($BASE_URL);
 
 if ($TEST_TOKEN) 
 {
-     $client->SetAuthToken($TEST_TOKEN, 'bearer');
+     $client->set_auth_token($TEST_TOKEN, 'bearer');
      print "Using authentication token: " . substr($TEST_TOKEN, 0, 8) . "...\n\n";
 }
 
@@ -169,22 +169,22 @@ if ($COMMAND eq 'status')
      
      eval 
      {
-          print_result("GET /health", $client->Health());
-          print_result("GET /stats", $client->Stats());
-          print_result("GET /status", $client->ExecuteRequest('GET', '/status'));
+          print_result("GET /health", $client->health);
+          print_result("GET /stats", $client->stats);
+          print_result("GET /status", $client->status);
           
-          my $info = $client->Info();
+          my $info = $client->info;
           print "=" x 70 . "\n";
           print "TEST: GET / (Root Info)\n";
           print "-" x 70 . "\n";
           
           if (ref($info) && $info->isa('Hlquery::Response')) 
           {
-               my $status_code = $info->GetStatusCode();
-               my $body = $info->GetBody();
+               my $status_code = $info->get_status_code;
+               my $body = $info->get_body;
                print "Status Code: $status_code\n";
                
-               if ($info->IsSuccess() && ref($body) eq 'HASH') 
+               if ($info->is_success && ref($body) eq 'HASH') 
                {
                     print "Name: " . ($body->{name} || 'N/A') . "\n";
                     print "Version: " . ($body->{version} || 'N/A') . "\n";
@@ -209,11 +209,11 @@ if ($COMMAND eq 'all')
 
      eval 
      {
-          print_result("GET /health", $client->Health());
-          print_result("GET /stats", $client->Stats());
-          print_result("GET /metrics", $client->ExecuteRequest('GET', '/metrics'));
-          print_result("GET /status", $client->ExecuteRequest('GET', '/status'));
-          print_result("GET / (Root)", $client->Info());
+          print_result("GET /health", $client->health);
+          print_result("GET /stats", $client->stats);
+          print_result("GET /metrics", $client->metrics);
+          print_result("GET /status", $client->status);
+          print_result("GET / (Root)", $client->info);
      };
 }
 
@@ -227,13 +227,13 @@ if ($COMMAND eq 'all' || $COMMAND eq 'cols' || $COMMAND eq 'open')
 
      eval 
      {
-          my $collections = $client->ListCollections($OFFSET, $LIMIT);
+          my $collections = $client->collections->list($OFFSET, $LIMIT);
           
           if ($COMMAND eq 'cols') 
           {
-               if ($collections->IsSuccess()) 
+               if ($collections->is_success) 
                {
-                    my $body = $collections->GetBody();
+                    my $body = $collections->get_body;
                     if (ref($body) eq 'HASH' && exists $body->{collections}) 
                     {
                          my @cols = @{$body->{collections}};
@@ -254,16 +254,15 @@ if ($COMMAND eq 'all' || $COMMAND eq 'cols' || $COMMAND eq 'open')
                
                if ($first_collection && $COMMAND eq 'all') 
                {
-                    print_result("GET /collections/{name}", $client->GetCollection($first_collection));
-                    print_result("GET /collections/{name}/fields", $client->GetCollectionFields($first_collection));
+                    print_result("GET /collections/{name}", $client->collections->get($first_collection));
                     
                     my $test_col = 'test_col_' . time();
-                    my $create_result = $client->Collections()->Create($test_col, { fields => [{ name => 'title', type => 'string' }] });
+                    my $create_result = $client->collections->create($test_col, { fields => [{ name => 'title', type => 'string' }] });
                     print_result("POST /collections (Create)", $create_result);
                     
-                    if ($create_result->IsSuccess()) 
+                    if ($create_result->is_success) 
                     {
-                         $client->Collections()->Delete($test_col);
+                         $client->collections->delete($test_col);
                     }
                }
           }
@@ -284,13 +283,13 @@ if ($COMMAND eq 'all' || $COMMAND eq 'docs' || $COMMAND eq 'open')
      {
           eval 
           {
-               my $documents = $client->ListDocuments($test_collection, { limit => $LIMIT });
+               my $documents = $client->documents->list($test_collection, { limit => $LIMIT });
                
                if ($COMMAND eq 'docs') 
                {
-                    if ($documents->IsSuccess()) 
+                    if ($documents->is_success) 
                     {
-                         my $body = $documents->GetBody();
+                         my $body = $documents->get_body;
                          if (ref($body) eq 'HASH' && exists $body->{documents}) 
                          {
                               foreach my $doc (@{$body->{documents}}) 
@@ -306,8 +305,8 @@ if ($COMMAND eq 'all' || $COMMAND eq 'docs' || $COMMAND eq 'open')
                     print_result("GET /collections/{name}/documents", $documents);
                     
                     my $new_doc = { id => 'test_' . time(), title => 'Test' };
-                    print_result("POST /documents (Add)", $client->Documents()->Add($test_collection, $new_doc));
-                    $client->Documents()->Delete($test_collection, $new_doc->{id});
+                    print_result("POST /documents (Add)", $client->documents->add($test_collection, $new_doc));
+                    $client->documents->delete($test_collection, $new_doc->{id});
                }
           };
      }
@@ -326,7 +325,7 @@ if ($COMMAND eq 'all')
      {
           eval 
           {
-               print_result("Search", $client->Search($search_col, { q => 'test', limit => 5 }));
+               print_result("Search", $client->documents->search($search_col, { q => 'test', limit => 5 }));
           };
      }
 }

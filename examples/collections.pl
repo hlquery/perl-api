@@ -30,41 +30,36 @@ print "Collections example using '$collection_name'.\n";
 
 # /* List collections. */
 
-my $collections = $client->ListCollections(0, 10);
-print "Collections: " . $json->encode($collections->GetBody()) . "\n";
+my $collections = $client->collections->list(0, 10);
+print "Collections: " . $json->encode($collections->get_body) . "\n";
 
 # /* Create a collection. */
 
-my $create = $client->Collections()->Create($collection_name, {
+my $create = $client->collections->create($collection_name, {
     fields => [
         { name => 'title', type => 'string' },
         { name => 'price', type => 'float' },
     ],
 });
 
-print "Create result: " . $create->GetStatusCode() . ".\n";
+print "Create result: " . $create->get_status_code . ".\n";
 
 # /* Get collection details. */
 
-my $collection = $client->GetCollection($collection_name);
-print "Collection details: " . $json->encode($collection->GetBody()) . "\n";
-
-# /* Get formatted fields. */
-
-my $fields = $client->GetCollectionFields($collection_name);
-print "Collection fields: " . $json->encode($fields->GetBody()) . "\n";
+my $collection = $client->collections->get($collection_name);
+print "Collection details: " . $json->encode($collection->get_body) . "\n";
 
 # /* Update collection. */
 
-my $update = $client->UpdateCollection($collection_name, {
+my $update = $client->collections->update($collection_name, {
     fields => [
         { name => 'description', type => 'string' },
     ],
 });
 
-print "Update result: " . $update->GetStatusCode() . ".\n";
+print "Update result: " . $update->get_status_code . ".\n";
 
 # /* Delete collection. */
 
-my $delete = $client->Collections()->Delete($collection_name);
-print "Delete result: " . $delete->GetStatusCode() . ".\n";
+my $delete = $client->collections->delete($collection_name);
+print "Delete result: " . $delete->get_status_code . ".\n";

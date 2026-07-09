@@ -27,7 +27,7 @@ my $collection_name = 'perl_docs_demo_' . time();
 
 my $json = JSON->new->utf8->pretty;
 
-$client->Collections()->Create($collection_name, {
+$client->collections->create($collection_name, {
     fields => [
         { name => 'title', type => 'string' },
         { name => 'content', type => 'string' },
@@ -38,15 +38,15 @@ print "Documents example using '$collection_name'.\n";
 
 # /* List documents. */
 
-my $documents = $client->ListDocuments($collection_name, { offset => 0, limit => 10 });
+my $documents = $client->documents->list($collection_name, { offset => 0, limit => 10 });
 
-print "Documents: " . $json->encode($documents->GetBody()) . "\n";
+print "Documents: " . $json->encode($documents->get_body) . "\n";
 
 # /* Get document. */
 
-if ($documents->IsSuccess()) 
+if ($documents->is_success) 
 {
-    my $body = $documents->GetBody();
+    my $body = $documents->get_body;
     
     if (ref($body->{documents}) eq 'ARRAY' && @{$body->{documents}} > 0) 
     {
@@ -54,8 +54,8 @@ if ($documents->IsSuccess())
         
         if ($doc_id) 
         {
-            my $document = $client->GetDocument($collection_name, $doc_id);
-            print "Document: " . $json->encode($document->GetBody()) . "\n";
+            my $document = $client->documents->get($collection_name, $doc_id);
+            print "Document: " . $json->encode($document->get_body) . "\n";
         }
     }
 }
@@ -68,8 +68,8 @@ my $new_doc = {
     content => 'This is a test document'
 };
 
-my $result = $client->Documents()->Add($collection_name, $new_doc);
-print "Add result: " . $result->GetStatusCode() . ".\n";
+my $result = $client->documents->add($collection_name, $new_doc);
+print "Add result: " . $result->get_status_code . ".\n";
 
 # /* Update document. */
 
@@ -78,12 +78,12 @@ my $updated_doc = {
     content => 'Updated content'
 };
 
-$result = $client->Documents()->Update($collection_name, 'doc_1', $updated_doc);
-print "Update result: " . $result->GetStatusCode() . ".\n";
+$result = $client->documents->update($collection_name, 'doc_1', $updated_doc);
+print "Update result: " . $result->get_status_code . ".\n";
 
 # /* Delete document. */
 
-$result = $client->Documents()->Delete($collection_name, 'doc_1');
-print "Delete result: " . $result->GetStatusCode() . ".\n";
+$result = $client->documents->delete($collection_name, 'doc_1');
+print "Delete result: " . $result->get_status_code . ".\n";
 
-$client->Collections()->Delete($collection_name);
+$client->collections->delete($collection_name);

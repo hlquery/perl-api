@@ -4,157 +4,152 @@
 
 <div align="center">
 
-**Perl client resources for hlquery, designed with a familiar and intuitive API structure.**
+**Perl client library for hlquery.**
 
-[![Follow hlquery](https://img.shields.io/badge/Follow-%40hlquery-blue?logo=x&logoColor=white&labelColor=000000)](https://x.com/hlquery)
 [![Perl build](https://img.shields.io/badge/Perl%20build-passing-brightgreen?logo=perl&logoColor=white&labelColor=000000)](https://github.com/hlquery/perl-api/actions/workflows/perl-api.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-perl--api-purple?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/perl-api/)
-[![hlquery](https://img.shields.io/badge/GitHub-hlquery-blue?logo=github&logoColor=white&labelColor=000000)](https://github.com/hlquery/hlquery/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-a35a0f?logo=open-source-initiative&logoColor=white&labelColor=000000)](https://opensource.org/licenses/BSD-3-Clause)
-
 
 </div>
 
-### What is the hlquery Perl API?
+## Overview
 
-The Perl API directory contains the [hlquery](https://github.com/hlquery/hlquery) Perl client resources, packaging metadata, runnable examples, and usage notes. It is the Perl entry point for talking to hlquery without building raw HTTP requests around `LWP::UserAgent` by hand.
+The hlquery Perl client wraps the HTTP API with service objects for collections, documents, search, SQL, and administration. It handles JSON, query parameters, auth headers, and response parsing so application code does not need to build raw `LWP::UserAgent` requests.
 
-### Why use it?
+Preferred style:
 
-Use the Perl API when you want hlquery integration to feel like part of your application instead of a stack of hand-written `LWP::UserAgent` calls and JSON handling. It cuts down repetitive transport code, keeps authentication and request behavior consistent, and gives you a cleaner path into collections, documents, search, and admin operations from normal Perl code.
-
-### Install
-
-Install dependencies:
-
-```bash
-$ cpanm --installdeps .
+```perl
+$client->collections->get('products');
+$client->documents->add('products', \%document);
 ```
 
-Or install the runtime modules directly:
+Legacy calls such as `$client->Collections()->Get(...)` still work.
+
+## Install
 
 ```bash
-$ cpanm LWP::UserAgent JSON JSON::MaybeXS URI URI::Escape Digest::MD5 Mojolicious Promises
+cpanm --installdeps .
 ```
 
-When loading from a local checkout:
+For local checkout usage:
 
 ```perl
 use lib '/path/to/hlquery/etc/api/perl/lib';
 use Hlquery::Client;
 ```
 
-### Quick Start
+## Quick Start
 
 ```perl
+use strict;
+use warnings;
 use Hlquery::Client;
 
-my $base_url = $ENV{HLQ_BASE_URL}
-    // $ENV{HLQUERY_BASE_URL}
-    // 'http://localhost:9200';
+my $client = Hlquery::Client->new($ENV{HLQUERY_BASE_URL} || 'http://localhost:9200');
 
-my $client = Hlquery::Client->new($base_url);
+my $health = $client->health;
+die "hlquery is not healthy\n" unless $health->is_success;
 
-my $health = $client->Health();
-print "Health status: " . $health->GetStatusCode() . "\n";
-
-my $collections = $client->ListCollections(0, 10);
-if ($collections->IsSuccess()) {
-    my $body = $collections->GetBody();
-    print "Collections: " . scalar(@{$body->{collections} || []}) . "\n";
-}
+my $collections = $client->collections->list(0, 10);
+print "collections status: " . $collections->get_status_code . "\n";
 ```
 
-### Auth
+Authentication:
 
 ```perl
 my $client = Hlquery::Client->new('http://localhost:9200', {
-    token => 'your_token_here',
+    token       => 'your_token_here',
     auth_method => 'bearer',
 });
 
-$client->SetAuthToken('your_token_here', 'bearer');
-$client->SetAuthToken('your_api_key_here', 'api-key');
+$client->set_auth_token('your_api_key_here', 'api-key');
 ```
 
-### SQL
+## Common Operations
+
+Create and inspect a collection:
 
 ```perl
-my $sql = $client->SQL();
+my $schema = {
+    fields => [
+        { name => 'title', type => 'string' },
+        { name => 'price', type => 'float' },
+    ],
+};
 
-my $rows = $sql->Query('SHOW COLLECTIONS;');
-my $exec = $sql->Exec("INSERT INTO logs_archive (id, title) VALUES ('row-1', 'warm cache');");
+my $create = $client->collections->create('products', $schema);
+die $create->get_error unless $create->is_success;
 
-my $products = $sql->Search('products',
-    'SELECT id, title FROM products ORDER BY id DESC LIMIT 3;',
-    { highlight => 0 }
+my $metadata = $client->collections->get('products');
+my $language = $client->collections->language('products');
+```
+
+Add, update, list, and delete documents:
+
+```perl
+$client->documents->add('products', {
+    id    => 'prod_1',
+    title => 'Mechanical Keyboard',
+    price => 129.99,
+});
+
+my $doc = $client->documents->get('products', 'prod_1');
+my $docs = $client->documents->list('products', { offset => 0, limit => 20 });
+
+$client->documents->update('products', 'prod_1', {
+    title => 'Mechanical Keyboard Pro',
+    price => 149.99,
+});
+
+$client->documents->delete('products', 'prod_1');
+```
+
+Search and SQL:
+
+```perl
+my $results = $client->documents->search('products', {
+    q        => 'keyboard',
+    query_by => 'title,description',
+    limit    => 10,
+});
+
+my $rows = $client->sql->query('SHOW COLLECTIONS;');
+my $top = $client->sql->search(
+    'products',
+    'SELECT id, title FROM products ORDER BY price DESC LIMIT 5;'
 );
 ```
 
-### Current resource API
-
-The client exposes service objects using the method names shown below:
+Bulk import and advanced document routes:
 
 ```perl
-my $metadata = $client->Collections()->Get('products');
-my $language = $client->Collections()->Language('products');
+$client->documents->import('products', [
+    { id => 'prod_2', title => 'Mouse', price => 49.99 },
+    { id => 'prod_3', title => 'Monitor', price => 299.00 },
+]);
 
-# GetFields is retained for compatibility and returns the collection metadata;
-# the server has no /collections/{name}/fields route.
-my $metadata_again = $client->Collections()->GetFields('products');
-
-my $context = $client->Documents()->Context('products', 'prod_1', { window => 3 });
-my $facets = $client->Documents()->Facets('products', { facet_by => 'brand' });
-my $export = $client->Documents()->Export('products', { filter_by => 'active:true' });
-my $maybe = $client->Documents()->Maybe('products', { q => 'keybaord' });
-
-$client->Documents()->UpdateByQuery('products', {
-    filter_by => 'active:false', set => { archived => 1 },
-});
-$client->Documents()->DeleteByQuery('products', { filter_by => 'expired:true' });
-
-my $searches = [{ collection => 'products', q => 'keyboard', query_by => 'title' }];
-$client->SearchAPI()->MultiSearch($searches);        # POST (default)
-$client->SearchAPI()->MultiSearch($searches, 'GET');
+$client->documents->facets('products', { facet_by => 'brand' });
+$client->documents->export('products', { filter_by => 'active:true' });
+$client->search_api->multi_search([
+    { collection => 'products', q => 'keyboard', query_by => 'title' },
+]);
 ```
 
-`Synonyms()->Upsert`, `Overrides()->Upsert`, and `Aliases()->Upsert` default to `PUT` and accept `POST` or `PUT` as the final argument. The same applies to global synonym upserts. The client also provides `Stopwords`, `Users`, `Keys`, `Links`, `Modules`, and `Analytics` service objects, plus direct wrappers for readiness, metrics, storage, integrity, counters, and repair.
-
-Run the offline route contract with:
-
-```bash
-prove -Ilib t/route_contract.t
-```
-
-### Reduce Text Example
-
-Use the same raw request path for custom module routes:
+For custom module routes:
 
 ```perl
-my $module_response = $client->ExecuteRequest('GET', '/modules/<name>/<route>', undef, {
+my $response = $client->execute_request('GET', '/modules/<name>/<route>', undef, {
     q => 'example query',
 });
 ```
 
-### Contributing
+## Check
 
-We welcome contributions from the community! All contributions must be released under the BSD 3-Clause license.
+```bash
+perl -Ilib -c lib/Hlquery/Client.pm
+perl -Ilib -c lib/Hlquery/Response.pm
+```
 
-### How to Contribute
+## License
 
-- Check existing [Perl API issues](https://github.com/hlquery/perl-api/issues) or create new ones
-- Contribute Perl client changes to [hlquery/perl-api](https://github.com/hlquery/perl-api)
-- Contribute shared server/API changes to [hlquery/hlquery](https://github.com/hlquery/hlquery)
-- Test and report bugs against the Perl client
-- Improve Perl-specific documentation and examples
-
-### Community
-
-- [Documentation](https://docs.hlquery.com)
-- [X (Twitter)](https://x.com/hlquery)
-- [Perl API GitHub](https://github.com/hlquery/perl-api)
-- [hlquery GitHub](https://github.com/hlquery/hlquery)
-
-### License
-
-The hlquery Perl API is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+BSD 3-Clause.

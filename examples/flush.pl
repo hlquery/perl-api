@@ -47,16 +47,16 @@ my $schema = {
     ]
 };
 
-my $create_result = $client->Collections()->Create($collection_name, $schema);
+my $create_result = $client->collections->create($collection_name, $schema);
 
-if ($create_result->IsSuccess()) 
+if ($create_result->is_success) 
 {
     print "  ✓ Collection '$collection_name' created successfully\n";
 } 
 else 
 {
-    print "  ✗ Failed to create collection: " . $create_result->GetStatusCode() . "\n";
-    my $error_body = $create_result->GetBody();
+    print "  ✗ Failed to create collection: " . $create_result->get_status_code . "\n";
+    my $error_body = $create_result->get_body;
     
     if ($error_body) 
     {
@@ -77,16 +77,16 @@ my $doc = {
     value => 42
 };
 
-my $add_result = $client->Documents()->Add($collection_name, $doc);
+my $add_result = $client->documents->add($collection_name, $doc);
 
-if ($add_result->IsSuccess()) 
+if ($add_result->is_success) 
 {
     print "  ✓ Document '$doc->{id}' added successfully\n";
 } 
 else 
 {
-    print "  ✗ Failed to add document: " . $add_result->GetStatusCode() . "\n";
-    my $error_body = $add_result->GetBody();
+    print "  ✗ Failed to add document: " . $add_result->get_status_code . "\n";
+    my $error_body = $add_result->get_body;
     
     if ($error_body) 
     {
@@ -99,12 +99,12 @@ print "\n";
 # /* Step 3: Check collection count before flush. */
 
 print "Step 3: Checking collection count before flush...\n";
-my $collections_before = $client->ListCollections(0, 1000);
+my $collections_before = $client->collections->list(0, 1000);
 my $count_before = 0;
 
-if ($collections_before->IsSuccess()) 
+if ($collections_before->is_success) 
 {
-    my $body = $collections_before->GetBody();
+    my $body = $collections_before->get_body;
     my $collections_list = ref($body->{collections}) eq 'ARRAY' ? $body->{collections} : [];
     $count_before = scalar(@$collections_list);
     print "  Collections before flush: $count_before\n";
@@ -116,7 +116,7 @@ if ($collections_before->IsSuccess())
 } 
 else 
 {
-    print "  ✗ Failed to list collections: " . $collections_before->GetStatusCode() . "\n";
+    print "  ✗ Failed to list collections: " . $collections_before->get_status_code . "\n";
 }
 
 print "\n";
@@ -124,11 +124,11 @@ print "\n";
 # /* Step 4: Flush all data. */
 
 print "Step 4: Flushing all data...\n";
-my $flush_result = $client->Flush();
+my $flush_result = $client->flush;
 
-if ($flush_result->IsSuccess()) 
+if ($flush_result->is_success) 
 {
-    my $body = $flush_result->GetBody();
+    my $body = $flush_result->get_body;
     my $collections_deleted = $body->{collections_deleted} // 0;
     print "  ✓ Flush completed successfully\n";
     print "  Collections deleted: $collections_deleted\n";
@@ -137,8 +137,8 @@ if ($flush_result->IsSuccess())
 } 
 else 
 {
-    print "  ✗ Flush failed: " . $flush_result->GetStatusCode() . "\n";
-    my $error_body = $flush_result->GetBody();
+    print "  ✗ Flush failed: " . $flush_result->get_status_code . "\n";
+    my $error_body = $flush_result->get_body;
     
     if ($error_body) 
     {
@@ -152,12 +152,12 @@ print "\n";
 # /* Step 5: Re-check collection count after flush. */
 
 print "Step 5: Checking collection count after flush...\n";
-my $collections_after = $client->ListCollections(0, 1000);
+my $collections_after = $client->collections->list(0, 1000);
 my $count_after = -1;
 
-if ($collections_after->IsSuccess()) 
+if ($collections_after->is_success) 
 {
-    my $body = $collections_after->GetBody();
+    my $body = $collections_after->get_body;
     my $collections_list = ref($body->{collections}) eq 'ARRAY' ? $body->{collections} : [];
     $count_after = scalar(@$collections_list);
     print "  Collections after flush: $count_after\n";
@@ -173,7 +173,7 @@ if ($collections_after->IsSuccess())
 } 
 else 
 {
-    print "  ✗ Failed to list collections: " . $collections_after->GetStatusCode() . "\n";
+    print "  ✗ Failed to list collections: " . $collections_after->get_status_code . "\n";
 }
 
 print "\n";

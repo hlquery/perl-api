@@ -27,7 +27,7 @@ my $collection_name = 'perl_search_demo_' . time();
 
 my $json = JSON->new->utf8->pretty;
 
-$client->Collections()->Create($collection_name, {
+$client->collections->create($collection_name, {
     fields => [
         { name => 'title', type => 'string' },
         { name => 'content', type => 'string' },
@@ -36,7 +36,7 @@ $client->Collections()->Create($collection_name, {
     ],
 });
 
-$client->Documents()->Add($collection_name, {
+$client->documents->add($collection_name, {
     id => '1',
     title => 'Wireless Keyboard',
     content => 'Compact laptop accessory',
@@ -44,7 +44,7 @@ $client->Documents()->Add($collection_name, {
     price => 120,
 });
 
-$client->Documents()->Add($collection_name, {
+$client->documents->add($collection_name, {
     id => '2',
     title => 'Refurbished Laptop',
     content => 'Budget notebook option',
@@ -56,24 +56,24 @@ print "Using collection: $collection_name\n\n";
 
 # /* Simple search. */
 
-my $results = $client->Search($collection_name, {
+my $results = $client->documents->search($collection_name, {
     q => 'keyboard',
     query_by => 'title,content',
     limit => 10
 });
 
-print "Search results: " . $json->encode($results->GetBody()) . "\n";
+print "Search results: " . $json->encode($results->get_body) . "\n";
 
 # /* Search with filters and sorting. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'keyboard',
     query_by => 'title',
     sort_by => 'title',
     limit => 5
 });
 
-print "Filtered search: " . $json->encode($results->GetBody()) . "\n";
+print "Filtered search: " . $json->encode($results->get_body) . "\n";
 
 # /* Multi-search. */
 
@@ -82,86 +82,86 @@ my $searches = [
     { collection => $collection_name, q => 'notebook', query_by => 'content' }
 ];
 
-$results = $client->SearchAPI()->MultiSearch($searches);
+$results = $client->search_api->multi_search($searches);
 
-print "Multi-search: " . $json->encode($results->GetBody()) . "\n";
+print "Multi-search: " . $json->encode($results->get_body) . "\n";
 
 # /* Supported query semantics. */
 
 # /* Field-specific search. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'title:laptop',
     query_by => 'title,content',
     limit => 10
 });
 
-print "Field search: " . $json->encode($results->GetBody()) . "\n";
+print "Field search: " . $json->encode($results->get_body) . "\n";
 
 # /* Boolean OR query. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'title:laptop OR title:notebook',
     query_by => 'title,content',
     limit => 10
 });
 
-print "Boolean OR search: " . $json->encode($results->GetBody()) . "\n";
+print "Boolean OR search: " . $json->encode($results->get_body) . "\n";
 
 # /* Boolean NOT query. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'title:laptop NOT title:refurbished',
     query_by => 'title,content',
     limit => 10
 });
 
-print "Boolean NOT search: " . $json->encode($results->GetBody()) . "\n";
+print "Boolean NOT search: " . $json->encode($results->get_body) . "\n";
 
 # /* Phrase search. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => '"wireless keyboard"',
     query_by => 'title',
     limit => 10
 });
 
-print "Phrase search: " . $json->encode($results->GetBody()) . "\n";
+print "Phrase search: " . $json->encode($results->get_body) . "\n";
 
 # /* Wildcard search. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'laptop*',
     query_by => 'title,content',
     limit => 10
 });
 
-print "Wildcard search: " . $json->encode($results->GetBody()) . "\n";
+print "Wildcard search: " . $json->encode($results->get_body) . "\n";
 
 # /* query_by restriction. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'laptop',
     query_by => 'title',
     limit => 10
 });
 
-print "query_by restricted search: " . $json->encode($results->GetBody()) . "\n";
+print "query_by restricted search: " . $json->encode($results->get_body) . "\n";
 
 # /* Filter operators belong in filter_by. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => '*',
     query_by => 'title,content',
     filter_by => 'price:>100&&category:electronics',
     limit => 10
 });
 
-print "Filtered search: " . $json->encode($results->GetBody()) . "\n";
+print "Filtered search: " . $json->encode($results->get_body) . "\n";
 
 # /* Search with highlighting. */
 
-$results = $client->Search($collection_name, {
+$results = $client->documents->search($collection_name, {
     q => 'keyboard',
     query_by => 'title,content',
     highlight => 1,
@@ -169,6 +169,6 @@ $results = $client->Search($collection_name, {
     limit => 10
 });
 
-print "Search with highlighting: " . $json->encode($results->GetBody()) . "\n";
+print "Search with highlighting: " . $json->encode($results->get_body) . "\n";
 
-$client->Collections()->Delete($collection_name);
+$client->collections->delete($collection_name);

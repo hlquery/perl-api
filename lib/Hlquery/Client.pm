@@ -62,6 +62,21 @@ sub Links       { return bless { client => $_[0] }, 'Hlquery::Client::Links'; }
 sub Modules     { return bless { client => $_[0] }, 'Hlquery::Client::Modules'; }
 sub Analytics   { return bless { client => $_[0] }, 'Hlquery::Client::Analytics'; }
 
+sub collections { return $_[0]->Collections(); }
+sub documents   { return $_[0]->Documents(); }
+sub search_api  { return $_[0]->SearchAPI(); }
+sub sql         { return $_[0]->SQL(); }
+sub sql_api     { return $_[0]->SQL(); }
+sub keys        { return $_[0]->Keys(); }
+sub synonyms    { return $_[0]->Synonyms(); }
+sub stopwords   { return $_[0]->Stopwords(); }
+sub overrides   { return $_[0]->Overrides(); }
+sub aliases     { return $_[0]->Aliases(); }
+sub users       { return $_[0]->Users(); }
+sub links       { return $_[0]->Links(); }
+sub modules     { return $_[0]->Modules(); }
+sub analytics   { return $_[0]->Analytics(); }
+
 sub Info   { return $_[0]->ExecuteRequest('GET', '/'); }
 sub Health { return $_[0]->ExecuteRequest('GET', '/health'); }
 sub Stats  { return $_[0]->ExecuteRequest('GET', '/stats'); }
@@ -99,6 +114,48 @@ sub UpdateCounters
 }
 
 sub DebugCounters { return $_[0]->ExecuteRequest('GET', '/debug/counters'); }
+
+sub set_auth_token { return shift->SetAuthToken(@_); }
+sub clear_auth     { return shift->ClearAuth(@_); }
+
+sub info               { return $_[0]->Info(); }
+sub health             { return $_[0]->Health(); }
+sub stats              { return $_[0]->Stats(); }
+sub flush              { return $_[0]->Flush(); }
+sub status             { return $_[0]->Status(); }
+sub query              { return $_[0]->Query(); }
+sub ready              { return $_[0]->Ready(); }
+sub ping               { return $_[0]->Ping(); }
+sub metrics            { return $_[0]->Metrics(); }
+sub metrics_json       { return $_[0]->MetricsJson(); }
+sub metrics_history    { return $_[0]->MetricsHistory(); }
+sub connections        { return $_[0]->Connections(); }
+sub rocksdb            { return $_[0]->RocksDB(); }
+sub rocksdb_internal   { return $_[0]->RocksDBInternal(); }
+sub doc_total          { return $_[0]->DocTotal(); }
+sub search_config      { return $_[0]->SearchConfig(); }
+sub startup            { return $_[0]->Startup(); }
+sub boot_status        { return $_[0]->BootStatus(); }
+sub integrity          { return $_[0]->Integrity(); }
+sub consistency        { return $_[0]->Consistency(); }
+sub self_check         { return $_[0]->SelfCheck(); }
+sub storage_status     { return $_[0]->StorageStatus(); }
+sub etc                { return $_[0]->Etc(); }
+sub repair             { return shift->Repair(@_); }
+sub update_counters    { return shift->UpdateCounters(@_); }
+sub debug_counters     { return $_[0]->DebugCounters(); }
+sub list_collections   { return shift->ListCollections(@_); }
+sub get_collection     { return shift->GetCollection(@_); }
+sub get_collection_fields { return shift->GetCollectionFields(@_); }
+sub update_collection  { return shift->UpdateCollection(@_); }
+sub list_documents     { return shift->ListDocuments(@_); }
+sub get_document_context { return shift->GetDocumentContext(@_); }
+sub get_document       { return shift->GetDocument(@_); }
+sub search             { return shift->Search(@_); }
+sub sql_query          { return shift->Sql(@_); }
+sub global_search      { return shift->GlobalSearch(@_); }
+sub exec_sql           { return shift->ExecSql(@_); }
+sub execute_request    { return shift->ExecuteRequest(@_); }
 
 sub ListCollections
 {
@@ -236,7 +293,7 @@ sub ExecuteRequest
     my $uri = URI->new($self->{base_url} . $path);
     my %query_form;
 
-    for my $key (keys %{$query})
+    for my $key (CORE::keys %{$query})
     {
         next if !defined $query->{$key};
 
@@ -425,6 +482,17 @@ sub SearchAlias
         : $self->{client}->ExecuteRequest('GET', $path, undef, $params);
 }
 
+sub create        { return shift->Create(@_); }
+sub delete        { return shift->Delete(@_); }
+sub list          { return shift->List(@_); }
+sub get           { return shift->Get(@_); }
+sub get_fields    { return shift->GetFields(@_); }
+sub language      { return shift->Language(@_); }
+sub distributed   { return shift->Distributed(@_); }
+sub update        { return shift->Update(@_); }
+sub vector_search { return shift->VectorSearch(@_); }
+sub search_alias  { return shift->SearchAlias(@_); }
+
 package Hlquery::Client::Documents;
 
 use strict;
@@ -593,6 +661,24 @@ sub Copy
     return $self->Import($collection_name, [$doc]);
 }
 
+sub add              { return shift->Add(@_); }
+sub update           { return shift->Update(@_); }
+sub delete           { return shift->Delete(@_); }
+sub list             { return shift->List(@_); }
+sub get              { return shift->Get(@_); }
+sub import           { return shift->Import(@_); }
+sub delete_by_filter { return shift->DeleteByFilter(@_); }
+sub search           { return shift->Search(@_); }
+sub search_post      { return shift->SearchPost(@_); }
+sub context          { return shift->Context(@_); }
+sub update_by_query  { return shift->UpdateByQuery(@_); }
+sub delete_by_query  { return shift->DeleteByQuery(@_); }
+sub facets           { return shift->Facets(@_); }
+sub export           { return shift->Export(@_); }
+sub maybe            { return shift->Maybe(@_); }
+sub recent           { return shift->Recent(@_); }
+sub copy             { return shift->Copy(@_); }
+
 package Hlquery::Client::SearchAPI;
 
 use strict;
@@ -617,8 +703,12 @@ sub GlobalSearch
 sub VectorSearch
 {
     my ($self, $collection_name, $params, $method) = @_;
-    return $self->{client}->Collections()->VectorSearch($collection_name, $params || {}, $method || 'GET');
+    return $self->{client}->collections->vector_search($collection_name, $params || {}, $method || 'GET');
 }
+
+sub multi_search  { return shift->MultiSearch(@_); }
+sub global_search { return shift->GlobalSearch(@_); }
+sub vector_search { return shift->VectorSearch(@_); }
 
 package Hlquery::Client::SQL;
 
@@ -642,6 +732,10 @@ sub Search
     my ($self, $collection_name, $sql, $params) = @_;
     return $self->{client}->SqlSearch($collection_name, $sql, $params);
 }
+
+sub query  { return shift->Query(@_); }
+sub exec   { return shift->Exec(@_); }
+sub search { return shift->Search(@_); }
 
 package Hlquery::Client::Keys;
 

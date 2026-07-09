@@ -12,9 +12,8 @@ my $client = Hlquery::Client->new($base_url, {
     token => $ENV{HLQ_TOKEN} // $ENV{HLQUERY_TOKEN},
 });
 
-my $sql = $client->SQL();
+my $sql = $client->sql;
 
-my $rows = $sql->Query('SHOW COLLECTIONS;');
-print "SHOW COLLECTIONS status: " . $rows->GetStatusCode() . "\n";
-print $rows->GetRawBody() . "\n";
-
+my $rows = $sql->query('SHOW COLLECTIONS;');
+print "SHOW COLLECTIONS status: " . $rows->get_status_code . "\n";
+print $rows->get_raw_body . "\n";
