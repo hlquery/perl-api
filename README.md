@@ -152,6 +152,8 @@ perl -Ilib -c lib/Hlquery/Client.pm
 perl -Ilib -c lib/Hlquery/Response.pm
 ```
 
-## License
+### License
 
-BSD 3-Clause.
+The hlquery Perl API is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+
+
