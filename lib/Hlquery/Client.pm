@@ -88,11 +88,13 @@ sub Ping   { return $_[0]->ExecuteRequest('GET', '/ping'); }
 sub Metrics { return $_[0]->ExecuteRequest('GET', '/metrics'); }
 sub MetricsJson { return $_[0]->ExecuteRequest('GET', '/metrics.json'); }
 sub MetricsHistory { return $_[0]->ExecuteRequest('GET', '/metrics/history'); }
+sub Cache { return $_[0]->ExecuteRequest('GET', '/cache'); }
 sub Connections { return $_[0]->ExecuteRequest('GET', '/connections'); }
 sub RocksDB { return $_[0]->ExecuteRequest('GET', '/rocksdb'); }
 sub RocksDBInternal { return $_[0]->ExecuteRequest('GET', '/_rocksdb'); }
 sub DocTotal { return $_[0]->ExecuteRequest('GET', '/doctotal'); }
 sub SearchConfig { return $_[0]->ExecuteRequest('GET', '/search-config'); }
+sub ConfigFiles { return $_[0]->ExecuteRequest('GET', '/config-files'); }
 sub Startup { return $_[0]->ExecuteRequest('GET', '/startup'); }
 sub BootStatus { return $_[0]->ExecuteRequest('GET', '/boot-status'); }
 sub Integrity { return $_[0]->ExecuteRequest('GET', '/integrity'); }
@@ -129,11 +131,13 @@ sub ping               { return $_[0]->Ping(); }
 sub metrics            { return $_[0]->Metrics(); }
 sub metrics_json       { return $_[0]->MetricsJson(); }
 sub metrics_history    { return $_[0]->MetricsHistory(); }
+sub cache              { return $_[0]->Cache(); }
 sub connections        { return $_[0]->Connections(); }
 sub rocksdb            { return $_[0]->RocksDB(); }
 sub rocksdb_internal   { return $_[0]->RocksDBInternal(); }
 sub doc_total          { return $_[0]->DocTotal(); }
 sub search_config      { return $_[0]->SearchConfig(); }
+sub config_files       { return $_[0]->ConfigFiles(); }
 sub startup            { return $_[0]->Startup(); }
 sub boot_status        { return $_[0]->BootStatus(); }
 sub integrity          { return $_[0]->Integrity(); }

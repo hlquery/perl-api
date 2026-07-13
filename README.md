@@ -27,13 +27,13 @@ $client->documents->add('products', \%document);
 
 Legacy calls such as `$client->Collections()->Get(...)` still work.
 
-## Install
+## Installation
 
 ```bash
 cpanm --installdeps .
 ```
 
-For local checkout usage:
+For local checkout use:
 
 ```perl
 use lib '/path/to/hlquery/etc/api/perl/lib';
@@ -53,7 +53,7 @@ my $health = $client->health;
 die "hlquery is not healthy\n" unless $health->is_success;
 
 my $collections = $client->collections->list(0, 10);
-print "collections status: " . $collections->get_status_code . "\n";
+print "collections status code: " . $collections->get_status_code . "\n";
 ```
 
 Authentication:
@@ -122,7 +122,7 @@ my $top = $client->sql->search(
 );
 ```
 
-Bulk import and advanced document routes:
+Bulk import documents and use advanced document routes:
 
 ```perl
 $client->documents->import('products', [
@@ -137,7 +137,7 @@ $client->search_api->multi_search([
 ]);
 ```
 
-For custom module routes:
+Call custom module routes directly:
 
 ```perl
 my $response = $client->execute_request('GET', '/modules/<name>/<route>', undef, {
@@ -145,7 +145,7 @@ my $response = $client->execute_request('GET', '/modules/<name>/<route>', undef,
 });
 ```
 
-## Check
+## Checks
 
 ```bash
 perl -Ilib -c lib/Hlquery/Client.pm
@@ -155,5 +155,4 @@ perl -Ilib -c lib/Hlquery/Response.pm
 ### License
 
 The hlquery Perl API is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
-
 
