@@ -152,7 +152,13 @@ perl -Ilib -c lib/Hlquery/Client.pm
 perl -Ilib -c lib/Hlquery/Response.pm
 ```
 
+### Community
+
+- 📖 [Documentation](https://docs.hlquery.com)
+- 🐦 [X (Twitter)](https://x.com/hlquery)
+- 🔧 [Perl API GitHub](https://github.com/hlquery/perl-api)
+- 📦 [hlquery GitHub](https://github.com/hlquery/hlquery)
+
 ### License
 
 The hlquery Perl API is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
-
