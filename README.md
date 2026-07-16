@@ -152,6 +152,15 @@ perl -Ilib -c lib/Hlquery/Client.pm
 perl -Ilib -c lib/Hlquery/Response.pm
 ```
 
+### Search all collections
+
+```perl
+my $result = $client->SearchAll({ q => 'research', limit => 20 });
+my $selected = $client->search_all({ q => 'research', collections => 'universities,science' });
+```
+
+`GlobalSearch` remains available as an equivalent name. Results are globally merged and each hit includes `document._collection`.
+
 ### Community
 
 - 📖 [Documentation](https://docs.hlquery.com)

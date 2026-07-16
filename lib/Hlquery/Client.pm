@@ -61,6 +61,7 @@ sub Users       { return bless { client => $_[0] }, 'Hlquery::Client::Users'; }
 sub Links       { return bless { client => $_[0] }, 'Hlquery::Client::Links'; }
 sub Modules     { return bless { client => $_[0] }, 'Hlquery::Client::Modules'; }
 sub Analytics   { return bless { client => $_[0] }, 'Hlquery::Client::Analytics'; }
+sub Presets     { return bless { client => $_[0] }, 'Hlquery::Client::Presets'; }
 
 sub collections { return $_[0]->Collections(); }
 sub documents   { return $_[0]->Documents(); }
@@ -76,6 +77,7 @@ sub users       { return $_[0]->Users(); }
 sub links       { return $_[0]->Links(); }
 sub modules     { return $_[0]->Modules(); }
 sub analytics   { return $_[0]->Analytics(); }
+sub presets     { return $_[0]->Presets(); }
 
 sub Info   { return $_[0]->ExecuteRequest('GET', '/'); }
 sub Health { return $_[0]->ExecuteRequest('GET', '/health'); }
@@ -158,6 +160,7 @@ sub get_document       { return shift->GetDocument(@_); }
 sub search             { return shift->Search(@_); }
 sub sql_query          { return shift->Sql(@_); }
 sub global_search      { return shift->GlobalSearch(@_); }
+sub search_all         { return shift->GlobalSearch(@_); }
 sub exec_sql           { return shift->ExecSql(@_); }
 sub execute_request    { return shift->ExecuteRequest(@_); }
 
@@ -278,6 +281,8 @@ sub GlobalSearch
         ? $self->ExecuteRequest('POST', '/search', $params)
         : $self->ExecuteRequest('GET', '/search', undef, $params);
 }
+
+sub SearchAll { return shift->GlobalSearch(@_); }
 
 sub ExecSql
 {
@@ -704,6 +709,8 @@ sub GlobalSearch
     return $self->{client}->GlobalSearch($params || {}, $method || 'GET');
 }
 
+sub SearchAll { return shift->GlobalSearch(@_); }
+
 sub VectorSearch
 {
     my ($self, $collection_name, $params, $method) = @_;
@@ -712,6 +719,7 @@ sub VectorSearch
 
 sub multi_search  { return shift->MultiSearch(@_); }
 sub global_search { return shift->GlobalSearch(@_); }
+sub search_all    { return shift->GlobalSearch(@_); }
 sub vector_search { return shift->VectorSearch(@_); }
 
 package Hlquery::Client::SQL;
@@ -1084,5 +1092,24 @@ sub Click
     my ($self, $payload) = @_;
     return $self->{client}->ExecuteRequest('POST', '/analytics/click', $payload || {});
 }
+
+package Hlquery::Client::Presets;
+
+use strict;
+use warnings;
+
+sub _name
+{
+    my ($name) = @_;
+    die "Preset name must be a non-empty string\n" if !defined($name) || $name !~ /\S/;
+    return Hlquery::Client::_url_encode($name);
+}
+
+sub List { return $_[0]->{client}->ExecuteRequest('GET', '/presets'); }
+sub Get { return $_[0]->{client}->ExecuteRequest('GET', '/presets/' . _name($_[1])); }
+sub Create { return $_[0]->{client}->ExecuteRequest('POST', '/presets/' . _name($_[1]), $_[2] || {}); }
+sub Update { return $_[0]->{client}->ExecuteRequest('PUT', '/presets/' . _name($_[1]), $_[2] || {}); }
+sub Upsert { my ($self, @args) = @_; return $self->Update(@args); }
+sub Delete { return $_[0]->{client}->ExecuteRequest('DELETE', '/presets/' . _name($_[1])); }
 
 1;
