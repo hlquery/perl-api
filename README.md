@@ -30,7 +30,7 @@ Legacy calls such as `$client->Collections()->Get(...)` still work.
 ## Installation
 
 ```bash
-cpanm --installdeps .
+$ cpanm --installdeps .
 ```
 
 For local checkout use:
