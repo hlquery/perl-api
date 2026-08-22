@@ -787,6 +787,12 @@ sub Delete
     return $self->{client}->ExecuteRequest('DELETE', '/keys/' . Hlquery::Client::_url_encode($key_id));
 }
 
+sub list   { return shift->List(@_); }
+sub create { return shift->Create(@_); }
+sub get    { return shift->Get(@_); }
+sub update { return shift->Update(@_); }
+sub delete { return shift->Delete(@_); }
+
 package Hlquery::Client::Synonyms;
 
 use strict;
@@ -852,6 +858,20 @@ sub DeleteGlobal
     return $self->{client}->ExecuteRequest('DELETE', '/synonyms/global/' . Hlquery::Client::_url_encode($term));
 }
 
+sub list_all      { return shift->ListAll(@_); }
+sub list          { return shift->List(@_); }
+sub upsert        { return shift->Upsert(@_); }
+sub create        { return shift->Create(@_); }
+sub update        { return shift->Update(@_); }
+sub get           { return shift->Get(@_); }
+sub delete        { return shift->Delete(@_); }
+sub list_global   { return shift->ListGlobal(@_); }
+sub upsert_global { return shift->UpsertGlobal(@_); }
+sub create_global { return shift->CreateGlobal(@_); }
+sub update_global { return shift->UpdateGlobal(@_); }
+sub get_global    { return shift->GetGlobal(@_); }
+sub delete_global { return shift->DeleteGlobal(@_); }
+
 package Hlquery::Client::Stopwords;
 
 use strict;
@@ -899,6 +919,14 @@ sub Delete
     return $self->{client}->ExecuteRequest('DELETE', Hlquery::Client::_collection_path($collection_name, 'stopwords', $term));
 }
 
+sub list_all      { return shift->ListAll(@_); }
+sub list_global   { return shift->ListGlobal(@_); }
+sub create_global { return shift->CreateGlobal(@_); }
+sub delete_global { return shift->DeleteGlobal(@_); }
+sub list          { return shift->List(@_); }
+sub create        { return shift->Create(@_); }
+sub delete        { return shift->Delete(@_); }
+
 package Hlquery::Client::Overrides;
 
 use strict;
@@ -930,6 +958,13 @@ sub Delete
     my ($self, $collection_name, $override_id) = @_;
     return $self->{client}->ExecuteRequest('DELETE', Hlquery::Client::_collection_path($collection_name, 'overrides', $override_id));
 }
+
+sub list   { return shift->List(@_); }
+sub upsert { return shift->Upsert(@_); }
+sub create { return shift->Create(@_); }
+sub update { return shift->Update(@_); }
+sub get    { return shift->Get(@_); }
+sub delete { return shift->Delete(@_); }
 
 package Hlquery::Client::Aliases;
 
@@ -969,6 +1004,14 @@ sub Delete
     return $self->{client}->ExecuteRequest('DELETE', '/aliases/' . Hlquery::Client::_url_encode($alias));
 }
 
+sub list                { return shift->List(@_); }
+sub list_for_collection { return shift->ListForCollection(@_); }
+sub upsert              { return shift->Upsert(@_); }
+sub create              { return shift->Create(@_); }
+sub update              { return shift->Update(@_); }
+sub get                 { return shift->Get(@_); }
+sub delete              { return shift->Delete(@_); }
+
 package Hlquery::Client::Users;
 
 use strict;
@@ -1004,6 +1047,12 @@ sub Delete
     return $self->{client}->ExecuteRequest('DELETE', '/users/' . Hlquery::Client::_url_encode($user_id));
 }
 
+sub list   { return shift->List(@_); }
+sub create { return shift->Create(@_); }
+sub get    { return shift->Get(@_); }
+sub update { return shift->Update(@_); }
+sub delete { return shift->Delete(@_); }
+
 package Hlquery::Client::Links;
 
 use strict;
@@ -1032,6 +1081,11 @@ sub Disconnect
     my ($self, $endpoint) = @_;
     return $self->{client}->ExecuteRequest('POST', '/links/disconnect', { endpoint => $endpoint });
 }
+
+sub list       { return shift->List(@_); }
+sub ping       { return shift->Ping(@_); }
+sub connect    { return shift->Connect(@_); }
+sub disconnect { return shift->Disconnect(@_); }
 
 package Hlquery::Client::Modules;
 
@@ -1082,6 +1136,14 @@ sub Request
     return $self->{client}->ExecuteRequest($method || 'GET', $path, $payload, $query || {});
 }
 
+sub list                { return shift->List(@_); }
+sub load                { return shift->Load(@_); }
+sub load_with_payload   { return shift->LoadWithPayload(@_); }
+sub unload              { return shift->Unload(@_); }
+sub unload_with_payload { return shift->UnloadWithPayload(@_); }
+sub syntax              { return shift->Syntax(@_); }
+sub request             { return shift->Request(@_); }
+
 package Hlquery::Client::Analytics;
 
 use strict;
@@ -1092,6 +1154,8 @@ sub Click
     my ($self, $payload) = @_;
     return $self->{client}->ExecuteRequest('POST', '/analytics/click', $payload || {});
 }
+
+sub click { return shift->Click(@_); }
 
 package Hlquery::Client::Presets;
 
@@ -1111,5 +1175,12 @@ sub Create { return $_[0]->{client}->ExecuteRequest('POST', '/presets/' . _name(
 sub Update { return $_[0]->{client}->ExecuteRequest('PUT', '/presets/' . _name($_[1]), $_[2] || {}); }
 sub Upsert { my ($self, @args) = @_; return $self->Update(@args); }
 sub Delete { return $_[0]->{client}->ExecuteRequest('DELETE', '/presets/' . _name($_[1])); }
+
+sub list   { return shift->List(@_); }
+sub get    { return shift->Get(@_); }
+sub create { return shift->Create(@_); }
+sub update { return shift->Update(@_); }
+sub upsert { return shift->Upsert(@_); }
+sub delete { return shift->Delete(@_); }
 
 1;
